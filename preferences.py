@@ -44,10 +44,11 @@ def assign_agent(params):
 agent = assign_agent(params)
 print(agent.__class__.__name__)
 print(agent.structs)
-a = agent.structs[0]
-print("SETTINGS FOR INTRO\n")
-print(f"Length of structure components: {a.len}")
-print(f"Number of UNIQUE components: {a.num_components}")
-print(f"Number of accidentals (not taken to account): {a.num_acc}")
-print(a.cs)
-print()
+
+for a in agent.structs:
+    print(f"SETTINGS FOR {a.name}\n")
+    print(f"Length of structure components: {a.len}")
+    print(f"Number of UNIQUE components: {a.num_components}")
+    print(f"Number of accidentals (not taken to account): {a.num_acc}")
+    print(a.cs)
+    print()

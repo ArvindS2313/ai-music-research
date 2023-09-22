@@ -10,7 +10,7 @@ class Structure():
         self.generate()
 
     def __repr__(self):
-        return f"Song Structure: {self.name}"
+        return self.name
     
     def gen_components(self):
         comp_structure = (10 * list("ABCDEFGHIJKL")[:self.num_components])[:self.len]
@@ -21,20 +21,32 @@ class Structure():
         ''' Generates the component structure for the song structure'''
 
         # decide on song length
-        if self.params["length"] == 1:
-            len = 5
-        elif self.params["length"] == 2:
-            len = 7
-        elif self.params["length"] < 5:
-            len = 9
+
+        # if intro or outro - make shorter
+        if self.name == "intro" or self.name == "outro":
+            if self.params["length"] == 1:
+                len = 2
+            elif self.params["length"] == 2:
+                len = 3
+            elif self.params["length"] < 5:
+                len = 4
+            else:
+                len = 5
         else:
-            len = random.randint(10, 11)
+            if self.params["length"] == 1:
+                len = 5
+            elif self.params["length"] == 2:
+                len = 7
+            elif self.params["length"] < 5:
+                len = 9
+            else:
+                len = random.randint(10, 11)
         
         # decide on variety
         if self.params["variety"] == 1:
-            num_components = min(2, len)
+            num_components = min(1 if self.name in ["intro", "outro"] else 2, len)
         elif self.params["variety"] == 2:
-            num_components = min(3, len)
+            num_components = min(1 if self.name in ["intro", "outro"] else 3, len)
         elif self.params["variety"] == 3:
             num_components = min(4 if len <= 7 else 6, len)
         elif self.params["variety"] == 4:
