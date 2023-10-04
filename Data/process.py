@@ -43,7 +43,7 @@ def cleanup(chords):
             cextra = chord[chord.find('#')+1:]
         elif "b" in chord:
             cchord = chord[:chord.find('b')+1]
-            cextra = chord[chord.find('#')+1:]
+            cextra = chord[chord.find('b')+1:]
         else:
             cchord = chord[0]
             cextra = chord[1:]  
@@ -122,23 +122,14 @@ def process(band):
     for song in orig_songs: 
         # Note: song and chords are refering to the same thing
 
-        print(song)
         cchords, extra = cleanup(song)  # cleaned song and cleaned extra part
         key = get_key(cchords) # key of the cleaned chords 
 
         transposed_no_extra = transpose(cchords, key) # transposed to C major
         transposed_extra = [] # transposed with the extra stuff
-        print(transposed_no_extra)
         for i in range(len(cchords)):
             final_chord = transposed_no_extra[i] + extra[i]
             transposed_extra.append(final_chord)
-        print()
-        print(transposed_extra)
-        print()
-        print()
         cleaned_songs.append(transposed_extra)
     
     return cleaned_songs
-
-
-print(process("The Beatles"))
