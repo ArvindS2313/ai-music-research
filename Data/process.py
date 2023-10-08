@@ -96,8 +96,8 @@ def get_key(chords):
 
 def transpose(chords, key):
     ''' transposes chords to key -- only deals with major keys for now'''
-    keys = ["Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", 
-            "A", "E", "B", "F#", "C#"] # list of keys
+    keys = ["Bbb", "Fb", "Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", 
+            "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#", "B#"] # list of keys
     final = "C"
     diff = keys.index(final) - keys.index(key) # diff between final & initial key
 
@@ -119,17 +119,18 @@ def process(band):
     orig_songs = [s[5].split(",") for s in songs if s[2] == band]
     cleaned_songs = []
 
-    for song in orig_songs: 
+    for i in range(len(orig_songs)): 
         # Note: song and chords are refering to the same thing
-
+        song = orig_songs[i]
         cchords, extra = cleanup(song)  # cleaned song and cleaned extra part
         key = get_key(cchords) # key of the cleaned chords 
 
         transposed_no_extra = transpose(cchords, key) # transposed to C major
         transposed_extra = [] # transposed with the extra stuff
-        for i in range(len(cchords)):
-            final_chord = transposed_no_extra[i] + extra[i]
+        for j in range(len(cchords)):
+            final_chord = transposed_no_extra[j] + extra[j]
             transposed_extra.append(final_chord)
         cleaned_songs.append(transposed_extra)
+        
     
     return cleaned_songs
