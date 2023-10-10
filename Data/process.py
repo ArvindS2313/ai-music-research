@@ -103,13 +103,16 @@ def transpose(chords, key):
 
     tchords = []
     for c in chords:
-        if "m" in c:
-            # it is a minor chord
-            c = c.replace("m", "")
-            tc = keys[keys.index(c)+diff] + "m"
-        else:
-            # get index, add difference, and assign new key
-            tc = keys[keys.index(c)+diff]
+        try:
+            if "m" in c:
+                # it is a minor chord
+                c = c.replace("m", "")
+                tc = keys[keys.index(c)+diff] + "m"
+            else:
+                # get index, add difference, and assign new key
+                tc = keys[keys.index(c)+diff]
+        except ValueError:
+            tc = "C"
         tchords.append(tc)
 
     return tchords
