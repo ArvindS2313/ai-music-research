@@ -29,10 +29,12 @@ def convert(chord):
 
     # replace sus with sus4
     if "sus" in chord and "sus4" not in chord and "sus2" not in chord:
-        chord.replace("sus", "sus4")
+        chord = chord.replace("sus", "sus4")
     
     # parenthesis that shouldn't be there
     chord = chord.replace("(", "")
     chord = chord.replace(")", "")
 
     return chord
+
+print(convert("Asus"))
