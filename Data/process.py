@@ -15,7 +15,7 @@ def cleanup(chords):
         chord = chord.replace("maj", "")
 
         # replace "weird" chords
-        chord = chord.replace("D#", "E#")
+        chord = chord.replace("D#", "Eb")
         chord = chord.replace("A#", "Bb")
         chord = chord.replace("G#", "Ab")
         chord = chord.replace("E#", "F")
