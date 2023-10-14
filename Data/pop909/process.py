@@ -12,7 +12,7 @@ keys = []
 
 # download/get data files
 os.chdir("../")
-for i in range(1, 910): # pop909 has 909 songs
+for i in range(1, 2): # pop909 has 909 songs
     num = f"{'0'*(3-len(str(i)))}{i}"
     # read in data, split, and convert to nparray
     with open(f"POP909/{num}/chord_audio.txt") as ca:
@@ -28,10 +28,7 @@ for i in range(1, 910): # pop909 has 909 songs
     chords.append(ca_arr)
     chords.append(cm_arr)
     keys.append(k_arr)
+    keys.append(k_arr) # twice b/c the chords are getting appended twice
 
 # cleanup chords and keys
 cchords = cleanup(chords, keys)
-
-for k in range(1, len(keys)):
-    if keys[k][0][2] == "Db:min":
-        print(k)

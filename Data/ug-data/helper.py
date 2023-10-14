@@ -36,5 +36,3 @@ def convert(chord):
     chord = chord.replace(")", "")
 
     return chord
-
-print(convert("Asus"))
