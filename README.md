@@ -10,3 +10,8 @@ This is all the code that I used in this project.
 * Web App Using Flask
 
 Later, I might make this into seperate repos, but for now, I've left it all in one.
+
+Credits:
+* Lance Fernando for the UG Data, which was taken from his Github repo [Progressions](https://github.com/Ljfernando/Progressions). Obtained permission through email to use data.
+* music-x-lab for the POP909 data, taken from [here](https://github.com/music-x-lab/POP909-Dataset). Released under MIT.
+* Andrej Karpathy's [nanoGPT](https://github.com/karpathy/nanoGPT). Released under MIT.
