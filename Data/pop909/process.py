@@ -12,7 +12,7 @@ keys = []
 
 # download/get data files
 os.chdir("../")
-for i in range(1, 2): # pop909 has 909 songs
+for i in range(1, 910): # pop909 has 909 songs
     num = f"{'0'*(3-len(str(i)))}{i}"
     # read in data, split, and convert to nparray
     with open(f"POP909/{num}/chord_audio.txt") as ca:
@@ -31,4 +31,11 @@ for i in range(1, 2): # pop909 has 909 songs
     keys.append(k_arr) # twice b/c the chords are getting appended twice
 
 # cleanup chords and keys
-cchords = cleanup(chords, keys)
+tchords = cleanup(chords, keys)
+
+# create NN splits
+num_songs = len(tchords)
+num_chords = sum([len(song) for song in tchords])
+
+print(num_songs)
+print(num_chords)
