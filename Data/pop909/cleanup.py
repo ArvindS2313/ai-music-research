@@ -50,7 +50,7 @@ def adjust(chord):
                       ["C##", "Ebb"],  ["E#", "Gbb"], ["A#", "Cbb"]]
 
     cchord, echord = chord.split(":")
-    echord = ":" + echord # add : to extra
+    echord = ":" + simplify(echord) # add : to extra
     new_chord = ""
     
     # take care of F#, Gb, Ebm, D#m
@@ -62,7 +62,7 @@ def adjust(chord):
                 if cchord in notallowed_maj[p]:
                     # if the cleaned chord is one of the not allowed chords
                     new_chord = allowed_maj[p]
-    else:
+    if "min" in echord:
         if cchord in allowed_min:
             new_chord = cchord
         else:
@@ -75,6 +75,25 @@ def adjust(chord):
         new_chord = "C" if "maj" in echord else "A"
     
     return new_chord + echord
+
+
+def simplify(end):
+    ''' Simplifies the ending of the chord to one of the six allowed types'''
+
+    allowed = ["7", "dim", "maj", "min", "sus2", "sus4", "min7", "maj7", "b7"]
+    final_end = ""
+
+    if end in allowed:
+        final_end = end
+    for e in allowed:
+        if e in end:
+            final_end = e
+            
+    # error check: is final_end empty?
+    if final_end == "":
+        final_end = "maj"
+
+    return final_end
 
 
 def cleanup(chords, keys):
