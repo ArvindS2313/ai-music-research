@@ -1,4 +1,31 @@
+''' Processes the Ulimate Guitar (UG) data and splits it into test and val
+splits for the NN. Different than POP909 in that genre and time period MLPs 
+will be generated from here as well. Also, the UG dataset will have errors
+in chords that will be taken care of.'''
+
+import os 
 from ugdata import songs
+import cleanup
+import numpy as np 
+import pickle
+
+# big lists 
+all_chords = []
+artists = []
+
+# process data
+for i in range(1):
+    song = songs[i]
+
+    # append stuff to files
+    chords = song[5].split(",")
+    all_chords.append(np.array(chords))
+    artist = song[2]
+    artists.append(artist)
+
+
+# clean chords and keys
+tchords = cleanup.cleanup(all_chords)
 
 
 def cleanup(chords):
