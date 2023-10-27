@@ -80,7 +80,7 @@ def adjust(chord):
 def simplify(end):
     ''' Simplifies the ending of the chord to one of the six allowed types'''
 
-    allowed = ["7", "dim", "maj", "min", "sus2", "sus4", "min7", "maj7", "b7"]
+    allowed = ["7", "dim", "maj", "min", "sus2", "sus4", "min7", "maj7"]
     final_end = ""
 
     if end in allowed:

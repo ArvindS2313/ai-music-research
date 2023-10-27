@@ -9,40 +9,153 @@ def cleanup(all_chords):
     all_tchords = []
     # loop over all of the songs
     for s in range(len(all_chords)):
+        # print(f"Currently on song {s}.")
         song = all_chords[s]
-        key = ""
+        cchords = []
+        echords = []
+        tchords = []
         
         # loop over each chord
         for c in range(len(song)):
             uchord = song[c]
+            # print(f"Current chord: {uchord}")
 
             # take care of maj/min
             uchord = uchord.replace("min", "m")
             if "maj" in uchord and "7" not in uchord:
                 uchord = uchord.replace("maj", "")
 
-            cchord = simplify_chord(uchord)
+            cchord = clean(uchord)
+            # print(f"Cleaned chord: {cchord}")
+            cchords.append(cchord)
             echord = uchord[len(cchord):] 
+            # print(f"Extra part of chord: {echord}")
+            echords.append(echord)
+
+        key = get_key(cchords)
+        # print(f"The key of the song is {key} major")
+        # print("This will be transposed into C major now.")
+
+        for c in range(len(song)):
+            cchord = cchords[c]
+            echord = echords[c]
             tchord = transpose(cchord, key) + echord
-            
+            # print(f"Chord went from {cchord + echord} to {tchord}")
+            tchord = simplify_end(tchord)
+            tchord = adjust(tchord)
+            # print(f"FINAL tchord: {tchord}")
+            tchords.append(tchord)
+
+        all_tchords.append(np.array(tchords))
+                
+    return all_tchords
 
 
-    return ""
+def simplify_end(chord):
+    ''' Changes ending to maj, min, dim, sus, 7, maj7, min7'''
+
+    # new clean chord and end chord to make the simplication easier
+    acc = ["#", "b"]
+    if len(chord) == 1:
+        start = chord
+        end = ""
+    elif chord[1] in acc:
+        start = chord[:2]
+        end = chord[2:]
+    else:
+        start = chord[:1]
+        end = chord[1:]
+    
+    final_end = ""
+    # no switch statements in python, lol
+    if end == "":
+        # no ending = major
+        final_end = ":maj"
+    elif "maj7" in end:
+        final_end = ":maj7"
+    elif "m7" in end:
+        final_end = ":min7"
+    elif "dim" in end:
+        final_end = ":dim"
+    elif "sus4" in end:
+        final_end = ":sus4"
+    elif "sus2" in end:
+        final_end = ":sus2"
+    elif "m" in end:
+        final_end = ":min"
+    elif "b7" in end:
+        final_end = ":b7"
+    # elif "7" in end:
+    #     final_end = ":7"
+    else:
+        # default to major if nothing works
+        final_end = ":maj"
+    
+    return start + final_end
 
 
-def transpose(chord, key):
+def get_key(chords):
+    ''' determines key based on heuristic algorithm. it may be wrong due to key changes
+    or just bad chords entered.'''
+
+    CHARTS = {
+    "C": ["C", "Dm", "Em", "F", "G", "Am", "Bdim"],
+    "G": ["G", "Am", "Bm", "C", "D", "Em", "F#dim"],
+    "D": ["D", "Em", "F#m", "G", "A", "Bm", "C#dim"],
+    "A": ["A", "Bm", "C#m", "D", "E", "F#m", "G#dim"],
+    "E": ["E", "F#m", "G#m", "A", "B", "C#m", "D#dim"],
+    "B": ["B", "C#m", "D#m", "E", "F#", "G#m", "A#dim"],
+    "F#": ["F#", "G#m", "A#m", "B", "C#", "D#m", "E#dim"],
+    "C#": ["C#", "D#m", "E#m", "F#", "G#", "A#m", "B#dim"],
+    "F": ["F", "Gm", "Am", "Bb", "C", "Dm", "Edim"],
+    "Bb": ["Bb", "Cm", "Dm", "Eb", "F", "Gm", "Adim"],
+    "Eb": ["Eb", "Fm", "Gm", "Ab", "Bb", "Cm", "Ddim"],
+    "Ab": ["Ab", "Bbm", "Cm", "Db", "Eb", "Fm", "Gdim"],
+    "Db": ["Db", "Ebm", "Fm", "Gb", "Ab", "Bbm", "Cdim"],
+    "Gb": ["Gb", "Abm", "Bbm", "Cb", "Db", "Ebm", "Fdim"],
+    "Cb": ["Cb", "Dbm", "Ebm", "Fb", "Gb", "Abm", "Bbdim"],
+    }
+    itok = {x:y for x,y in enumerate(CHARTS.keys())}
+
+    ''' Loop over all chords
+    Add to counts which contain keys which contain chord
+    Key w max counts is key of chords    
+    '''
+    counts = [0 for _ in range(len(itok))]
+    for c in chords:
+        # print(f"chord {c} on right now")
+        for i in range(len(itok)):
+            inkey = CHARTS[itok[i]] # inkey is a list
+            if c in inkey:
+                # print(f"chord in key of {itok[i]}")
+                counts[i] += 1
+        # print()
+    
+    # DEBUG ONLY - print out key, count pair
+    # for i in range(len(counts)):
+    #     print(itok[i], counts[i])
+
+    return itok[counts.index(max(counts))]
+
+
+def transpose(c, key):
     ''' transposes cleaned chord to given key'''
-    keys = ["Bbb", "Fb", "Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", 
-            "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#", "B#"] # list of keys
+    keys = ["Dbb", "Abb", "Ebb", "Bbb", "Fb", "Cb", "Gb", "Db", "Ab", "Eb", "Bb", 
+            "F", "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#", 
+            "B#", "F##", "C##", "G##", "D##"] # list of keys
     final = "C"
     diff = keys.index(final) - keys.index(key) # diff between final & initial key
 
-    tchords = []
     try:
         if "m" in c:
-            # it is a minor chord
-            c = c.replace("m", "")
-            tc = keys[keys.index(c)+diff] + "m"
+            if "dim" in c:
+                # it is a dim chord
+                c = c.replace("dim", "")
+                tc = keys[keys.index(c)+diff] + "dim"
+            else:
+                # it is a minor chord
+                c = c.replace("m", "")
+                tc = keys[keys.index(c)+diff] + "m"
         else:
             # get index, add difference, and assign new key
             tc = keys[keys.index(c)+diff]
@@ -52,86 +165,81 @@ def transpose(chord, key):
     return tc
 
 
-def simplify_chord(chord):
+def clean(chord):
+
     ''' return a cleaned up version of the complex chord'''
 
     # handle maj execptions
     if "maj" in chord:
         return chord[:chord.find("m")]
-
+    
+    # handle dim execeptions:
+    if "dim" in chord:
+        return chord[:chord.find("dim")+3]
     chord = chord.replace("min", "m")
-    if len(chord) == 1:
-        return chord
-    if len(chord) == 2:
-        # either Xb, X#, Xm, or XY
-        if chord[1] in ["b", "#", "m"]:
-            return chord
+
+    letters = ["A", "B", "C", "D", "E", "F", "G"]
+    symbols = ["b", "#", "m"]
+    cchord = ""
+    for char in chord:
+        if char in letters or char in symbols:
+            cchord += char
         else:
-            return chord[0]
-    if len(chord) >= 3:
-        if chord[2] == "m":
-            return chord[:3]
-        else:
-            return chord[:2]
-         
-    
+            break
+
+    return cchord
 
 
+def adjust(chord):
+    ''' Make chord "better" in C major. '''    
 
-def get_parts(chord):
-    ''' Determines the 'end' part of a chord'''
+    # allowed major, minor, and diminished chords
+    allowed_maj = ["C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db"]
+    allowed_min = ["A", "E", "B", "F#", "C#", "G#", "D", "G", "C", "F", "Bb"]
+    allowed_dim = ["B", "F#", "C#", "G#", "D#", "E", "A", "D", "G", "C"]
 
-    start = ""
-    end = ""
-    
-    
-    if len(chord) == 1:
-          start = chord
-          end = ""
-    if "m" in chord: 
-        if "dim" in chord: 
-            # doing this because 'dim' will have 'm' in it
-            start = chord[:chord.find('dim')]
-            end = chord[chord.find('dim'):]
-        elif "maj" in chord:
-            start = chord[:chord.find('maj')-4]
-            end = chord[chord.find('maj')-4:]
-        else:
-            # it is a minor chord but not a dim chord
-            start = chord[:chord.find('m')+1]
-            end = chord[chord.find('m')+1:]
-    elif "add" not in chord and "sus" not in chord and "aug" not in chord:
-         # some form of major chord
-        start += 'maj'
+    notallowed_maj = ["F#", "C#", "Gb", "Cb"]
+    notallowed_min = ["Eb", "Ab", "Gb", "Db"]
+    notallowed_dim = ["F", "Bb", "Eb", "Ab", "Db", "Gb"]
 
-    return start, end 
+    # any weird chord (e.g. B#) gets converted into its nicer counterpart
+    werid_to_normal = {"E#":"F", "B#":"C", "Cb":"B", "Fb":"E", "G#":"Ab", "D#":"Eb", "A#":"Bb"}
+    start, end = chord.split(":")
+    start = werid_to_normal[start] if start in werid_to_normal.keys() else start
 
+    final_start = start # to begin with 
 
-def fix(chord):
-    ''' changes format and adjusts the complex chord to make it simpler'''
+    # so repetitive, sigh
+    if "min" in end:
+        if start in notallowed_min:
+            final_start = "A" # for NOW...
+            # check if allowed in maj
+            for c in allowed_maj:
+                if start == c:
+                    final_start = c
+                    end = "maj"
 
-    # get rid of inversions
-    if "/" in chord:
-            chord = chord[:chord.find('/')]
+    elif "dim" in end:
+        if start in notallowed_dim:
+            final_start = "B"
+            # check if allowed in maj
+            for c in allowed_maj:
+                if start == c:
+                    final_start = c
+                    end = "maj"
 
-    # change ending to make it simpler
-    schord, echord = get_parts(chord)
-    allowed = ["7", "dim", "maj", "min", "sus2", "sus4", "min7", "maj7", "b7"]
+    else:
+        if start in notallowed_maj:
+            # note: sus chords are considered as maj chords for this purpose
+            final_start = "C"
+            end = "sus" if "sus" in end else "maj"
+            # check if allowed in min
+            for c in allowed_min:
+                if start == c:
+                    final_start = c
+                    end = "min"
 
-    final_end = ""
-    if echord in allowed:
-        final_end = echord
-    for e in allowed:
-        if e in echord:
-            final_end = e
-            
-    # error check: is final_end empty?
-    if final_end == "":
-        final_end = "maj"
+    return final_start + ":" + end  # phew 
+   
 
-    return schord + final_end
-
-
-# print("qwerty"[len("qw"):])
-# print(cleanup([["A", "B#m7b4", "Cm73"]]))
-print(simplify_chord("Adim"))
+# Some testing over here I'll put in later

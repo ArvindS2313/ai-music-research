@@ -35,7 +35,7 @@ for i in range(1, 910): # pop909 has 909 songs
 tchords = cleanup(chords, keys)
 
 # get info about the transposed chords
-unique_chords = sorted(set([ch for s in tchords for ch in s]))
+unique_chords = sorted(list(set([ch for s in tchords for ch in s])))
 vocab_size = len(unique_chords) # num parameters for NN
 # print(unique_chords)
 print("all unique chords", "   ".join(unique_chords))
@@ -83,3 +83,10 @@ info = {
 #     print("here, executing this command")
 #     pickle.dump(info, f)
 
+freq_dict = {c:0 for c, i in ctoi.items()}
+for s in tchords: 
+    for ch in s:
+        freq_dict[ch] += 1
+freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
+for k, v in sorted(freq_dict.items()):
+    print(f"{k}\t\t{v}")
