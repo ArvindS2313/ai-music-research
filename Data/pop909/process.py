@@ -79,14 +79,14 @@ info = {
 }
 
 # not working? that's weird. guess we would need to import this file everytime?
-# with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
-#     print("here, executing this command")
-#     pickle.dump(info, f)
+with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
+    print("here, executing this command")
+    pickle.dump(info, f)
 
-freq_dict = {c:0 for c, i in ctoi.items()}
-for s in tchords: 
-    for ch in s:
-        freq_dict[ch] += 1
-freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
-for k, v in sorted(freq_dict.items()):
-    print(f"{k}\t\t{v}")
+# freq_dict = {c:0 for c, i in ctoi.items()}
+# for s in tchords: 
+#     for ch in s:
+#         freq_dict[ch] += 1
+# freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
+# for k, v in sorted(freq_dict.items()):
+#     print(f"{k}\t\t{v}")

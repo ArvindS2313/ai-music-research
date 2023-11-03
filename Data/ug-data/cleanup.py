@@ -117,19 +117,18 @@ def get_key(chords):
     }
     itok = {x:y for x,y in enumerate(CHARTS.keys())}
 
-    ''' Loop over all chords
-    Add to counts which contain keys which contain chord
-    Key w max counts is key of chords    
-    '''
+
     counts = [0 for _ in range(len(itok))]
+    # loop over all of the chords
     for c in chords:
         # print(f"chord {c} on right now")
         for i in range(len(itok)):
-            inkey = CHARTS[itok[i]] # inkey is a list
+            # loop over all of the potential keys
+            inkey = CHARTS[itok[i]] # inkey = list of allowed chords for key
             if c in inkey:
                 # print(f"chord in key of {itok[i]}")
                 counts[i] += 1
-        # print()
+                # if chord in allowed chords for that key, that key is a potential winner
     
     # DEBUG ONLY - print out key, count pair
     # for i in range(len(counts)):
@@ -142,8 +141,8 @@ def transpose(c, key):
     ''' transposes cleaned chord to given key'''
     keys = ["Dbb", "Abb", "Ebb", "Bbb", "Fb", "Cb", "Gb", "Db", "Ab", "Eb", "Bb", 
             "F", "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#", 
-            "B#", "F##", "C##", "G##", "D##"] # list of keys
-    final = "C"
+            "B#", "F##", "C##", "G##", "D##"] # list of keys including theoreticals
+    final = "C" # final key is C
     diff = keys.index(final) - keys.index(key) # diff between final & initial key
 
     try:
@@ -166,21 +165,22 @@ def transpose(c, key):
 
 
 def clean(chord):
-
     ''' return a cleaned up version of the complex chord'''
 
     # handle maj execptions
     if "maj" in chord:
         return chord[:chord.find("m")]
-    
     # handle dim execeptions:
     if "dim" in chord:
         return chord[:chord.find("dim")+3]
-    chord = chord.replace("min", "m")
+    chord = chord.replace("min", "m") # 'min' is not allowed
 
     letters = ["A", "B", "C", "D", "E", "F", "G"]
     symbols = ["b", "#", "m"]
     cchord = ""
+
+    # once the chars of the chord are not part of letters/symbols, you've reached end of 
+    # the clean key
     for char in chord:
         if char in letters or char in symbols:
             cchord += char
@@ -193,11 +193,9 @@ def clean(chord):
 def adjust(chord):
     ''' Make chord "better" in C major. '''    
 
-    # allowed major, minor, and diminished chords
+    # allowed and notallowed major, minor, and diminished chords
     allowed_maj = ["C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db"]
     allowed_min = ["A", "E", "B", "F#", "C#", "G#", "D", "G", "C", "F", "Bb"]
-    allowed_dim = ["B", "F#", "C#", "G#", "D#", "E", "A", "D", "G", "C"]
-
     notallowed_maj = ["F#", "C#", "Gb", "Cb"]
     notallowed_min = ["Eb", "Ab", "Gb", "Db"]
     notallowed_dim = ["F", "Bb", "Eb", "Ab", "Db", "Gb"]
@@ -211,8 +209,10 @@ def adjust(chord):
 
     # so repetitive, sigh
     if "min" in end:
-        if start in notallowed_min:
+        if start in notallowed_min: 
+            # chord not a proper minor chord - so change needed
             final_start = "A" # for NOW...
+
             # check if allowed in maj
             for c in allowed_maj:
                 if start == c:

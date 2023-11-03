@@ -87,10 +87,10 @@ with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
     pickle.dump(info, f)
 
 # Data distributions
-freq_dict = {c:0 for c, i in ctoi.items()}
-for s in tchords: 
-    for ch in s:
-        freq_dict[ch] += 1
-freq_dict = {c:round(100*i/num_chords, 4) for c, i in freq_dict.items()}
-for k, v in sorted(freq_dict.items()):
-    print(f"{k}\t\t{v}")
+# freq_dict = {c:0 for c, i in ctoi.items()}
+# for s in tchords: 
+#     for ch in s:
+#         freq_dict[ch] += 1
+# freq_dict = {c:round(100*i/num_chords, 4) for c, i in freq_dict.items()}
+# for k, v in sorted(freq_dict.items()):
+#     print(f"{k}\t\t{v}")
