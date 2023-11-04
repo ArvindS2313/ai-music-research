@@ -47,7 +47,7 @@ with open("info.pkl", "rb") as f:
 
 # Bdim, Cdim, & F#dim in UG dataset but not in POP909
 ctoi = ctoi_pop909 | {"B:dim":len(ctoi_pop909), "C:dim":len(ctoi_pop909)+1, 
-                      "F#:dim":len(ctoi_pop909)+2}
+                      "F#:dim":len(ctoi_pop909)+2, "Db:sus4":len(ctoi_pop909)+3 }
 itoc = {y:x for x, y in ctoi.items()}
 def convert(d):
     # convert int to string or string to int
@@ -87,10 +87,10 @@ with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
     pickle.dump(info, f)
 
 # Data distributions
-# freq_dict = {c:0 for c, i in ctoi.items()}
-# for s in tchords: 
-#     for ch in s:
-#         freq_dict[ch] += 1
-# freq_dict = {c:round(100*i/num_chords, 4) for c, i in freq_dict.items()}
-# for k, v in sorted(freq_dict.items()):
-#     print(f"{k}\t\t{v}")
+freq_dict = {c:0 for c, i in ctoi.items()}
+for s in tchords: 
+    for ch in s:
+        freq_dict[ch] += 1
+freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
+for k, v in sorted(freq_dict.items()):
+    print(f"{k}\t\t{v}")

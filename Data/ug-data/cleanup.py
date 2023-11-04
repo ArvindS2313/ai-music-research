@@ -1,5 +1,6 @@
 import numpy as np 
 import os
+import random
 
 ''' Cleanup and transpose the chords to C major. Consists of multiple functions.'''
 
@@ -41,8 +42,7 @@ def cleanup(all_chords):
             echord = echords[c]
             tchord = transpose(cchord, key) + echord
             # print(f"Chord went from {cchord + echord} to {tchord}")
-            tchord = simplify_end(tchord)
-            tchord = adjust(tchord)
+            tchord = randomize(adjust(simplify_end(tchord)))
             # print(f"FINAL tchord: {tchord}")
             tchords.append(tchord)
 
@@ -240,6 +240,17 @@ def adjust(chord):
                     end = "min"
 
     return final_start + ":" + end  # phew 
-   
 
-# Some testing over here I'll put in later
+
+def randomize(tchord):
+    ''' randomizes ending if maj/minor chord 50% of the time'''
+
+    # return tchord
+    start, end = tchord.split(":")
+    if end == "maj" and random.random() < 0.6:
+        return start + ":" + random.choices(["maj7", "sus2", "sus4"], weights=[40, 30, 30])[0]
+    if end == "min" and random.random() < 0.6:
+        return start + ":" + random.choices(["min7"])[0]  
+
+    return start + ":" + end  
+   
