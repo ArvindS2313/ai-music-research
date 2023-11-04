@@ -46,7 +46,7 @@ def cleanup(all_chords):
             # print(f"FINAL tchord: {tchord}")
             tchords.append(tchord)
 
-        all_tchords.append(np.array(tchords))
+        all_tchords.append(tchords)
                 
     return all_tchords
 

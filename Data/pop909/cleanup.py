@@ -133,6 +133,6 @@ def cleanup(chords, keys):
                     tchord = adjust(transpose(key, song_chords[c][2]))
                     tchords.append(tchord)
     
-        all_tchords.append(np.array(tchords))
+        all_tchords.append(tchords)
 
     return all_tchords

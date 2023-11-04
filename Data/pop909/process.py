@@ -18,13 +18,10 @@ for i in range(1, 910): # pop909 has 909 songs
     # read in data, split, and convert to nparray
     with open(f"POP909/{num}/chord_audio.txt") as ca:
         ca_arr = [line.split("\t") for line in ca.read().splitlines()]
-        ca_arr = np.array(ca_arr)
     with open(f"POP909/{num}/chord_midi.txt") as cm:
         cm_arr = [line.split("\t") for line in cm.read().splitlines()]
-        cm_arr = np.array(cm_arr)
     with open(f"POP909/{num}/key_audio.txt") as k:
         k_arr = [line.split("\t") for line in k.read().splitlines()]
-        k_arr = np.array(k_arr)
 
     chords.append(ca_arr)
     chords.append(cm_arr)
@@ -43,7 +40,7 @@ print("vocab size: ", vocab_size)
 
 
 # create mappings
-ctoi = {y:x for x, y in enumerate(unique_chords)}
+ctoi = {y:x+1 for x, y in enumerate(unique_chords)}
 itoc = {y:x for x, y in ctoi.items()}
 def convert(d):
     # convert int to string or string to int
@@ -67,8 +64,14 @@ print(f"train data has {sum([len(s) for s in train_data])} chords")
 print(f"val data has {sum([len(s) for s in val_data])} chords")
 
 # create integer encodings for splits
-train_ids = [np.array(convert(s)) for s in train_data]
-val_ids = [np.array(convert(s)) for s in val_data]
+train_ids = [convert(s) for s in train_data]
+val_ids = [convert(s) for s in val_data]
+
+# make all songs have same length so can be made np.array
+max_train = max([len(a) for a in train_ids])
+train_ids = np.array([np.array(song + [0 for _ in range(max_train - len(song))]) for song in train_ids])
+max_val = max([len(a) for a in val_ids])
+val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for song in val_ids])
 
 # exporting
 info = {
@@ -82,6 +85,11 @@ info = {
 with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
     print("here, executing this command")
     pickle.dump(info, f)
+
+
+# export train_ids and val_ids to .bin file
+train_ids.tofile(os.path.join(os.path.dirname(__file__), 'train.bin'))
+val_ids.tofile(os.path.join(os.path.dirname(__file__), 'val.bin')) 
 
 # freq_dict = {c:0 for c, i in ctoi.items()}
 # for s in tchords: 
