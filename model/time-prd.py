@@ -63,12 +63,3 @@ class TimePeriod(nn.Module):
             probs = F.softmax(logits, dim=-1)
             pred = torch.multinomial(probs, num_samples=1)
             context = torch.cat((context[:, 1:], pred), dim=1)
-
-        
-
-
-
-
-
-
-

@@ -100,10 +100,12 @@ val_ids.tofile(os.path.join(os.path.dirname(__file__), 'val.bin'))
 
 
 # Data distributions
-# freq_dict = {c:0 for c, i in ctoi.items()}
-# for s in tchords: 
-#     for ch in s:
-#         freq_dict[ch] += 1
-# freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
-# for k, v in sorted(freq_dict.items()):
-#     print(f"{k}\t\t{v}")
+freq_dict = {c:0 for c, i in ctoi.items()}
+for s in tchords: 
+    for ch in s:
+        freq_dict[ch] += 1
+freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
+for k, v in sorted(freq_dict.items()):
+    print(f"{k}\t\t{v}")
+
+print("Num chords", len(itoc))
