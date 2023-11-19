@@ -95,8 +95,8 @@ with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
 
 
 # export train_ids and val_ids to .bin file
-train_ids.tofile(os.path.join(os.path.dirname(__file__), 'train.bin'))
-val_ids.tofile(os.path.join(os.path.dirname(__file__), 'val.bin')) 
+train_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-train.bin'))
+val_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-val.bin')) 
 
 
 # Data distributions
@@ -107,5 +107,3 @@ for s in tchords:
 freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
 for k, v in sorted(freq_dict.items()):
     print(f"{k}\t\t{v}")
-
-print("Num chords", len(itoc))

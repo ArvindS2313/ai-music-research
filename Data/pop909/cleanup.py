@@ -1,4 +1,5 @@
 import numpy as np 
+import random
 import os 
 
 def transpose(key, chord):
@@ -24,7 +25,7 @@ def transpose(key, chord):
     index_cchord = chord_order.index(cchord)
     new_index = index_cchord + diff
     # create transposed chord
-    tchord = chord_order[new_index] + ":" + echord
+    tchord = randomize(chord_order[new_index] + ":" + echord)
 
     return tchord
 
@@ -136,3 +137,16 @@ def cleanup(chords, keys):
         all_tchords.append(tchords)
 
     return all_tchords
+
+def randomize(tchord):
+    ''' randomizes ending if maj/minor chord 50% of the time'''
+
+    # return tchord
+    start, end = tchord.split(":")
+    if end == "maj" and random.random() < 0.6:
+        return start + ":" + random.choices(["maj7", "sus2", "sus4"], weights=[40, 30, 30])[0]
+    if end == "min" and random.random() < 0.6:
+        return start + ":" + random.choices(["min7"])[0]  
+
+    return start + ":" + end  
+   
