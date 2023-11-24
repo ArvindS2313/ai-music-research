@@ -79,9 +79,8 @@ class Attention(nn.Module):
 class MLP(nn.Module):
     ''' a feed-foward MLP '''
 
-
     def __init__(self, n_embd, n_head, block_size, exp=False):
-
+        pass
 
 
 class DecoderBlock(nn.Module):
