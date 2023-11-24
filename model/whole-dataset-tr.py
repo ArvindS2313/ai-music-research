@@ -28,14 +28,63 @@ See README for my references.
 '''
 
 class Attention(nn.Module):
-    pass
+    ''' a multi-headed attention block'''
 
+    def __init__(self, n_embd, n_head, block_size, exp=False) -> None:
+        super().__init__()
+        assert n_embd % n_head == 0, "Improper parameters"
+
+        self.exp = exp   # are we in experiment mode? 
+        self.n_embd = n_embd
+        self.head_size = n_embd/n_head   # head_size * n_head = n_embd
+        self.n_head = n_head
+        self.block_size = block_size
+
+        self.query = nn.Linear(self.n_embd, self.self.n_embd, bias=False) 
+        self.key = nn.Linear(self.n_embd, self.n_embd, bias=False)
+        self.val = nn.Linear(self.n_embd, self.n_embd, bias=False)
+        self.ln = nn.Linear(self.n_embd, self.n_embd)  # final linear layer        
+
+
+    def forward(self, x):
+        # assert dimensionality of x
+        assert x.dim == 3, "Must be shape (B, T, C)"
+        batch_size = x.shape[0]
+
+        # query, key, and value vectors
+        q = self.query(x)
+        k = self.key(x)
+        v = self.val(x)
+
+        # adding batch dimensions for multiple heads
+        q = q.view(batch_size, self.block_size, self.n_head, 
+               int(self.n_embd/self.n_head)).transpose(1, 2)    # B, n_head, T, C
+        k = k.view(batch_size, self.block_size, self.n_head,     
+               int(self.n_embd/self.n_head)).transpose(1, 2)    # B, n_head, T, C
+        v = v.view(batch_size, self.block_size, self.n_head,     
+               int(self.n_embd/self.n_head)).transpose(1, 2)    # B, n_head, T, C
+        
+        # Manual scaled dot product attention - let's implement Shaw. et al. later
+        affin = q @ k.transpose(-1, -2) / math.sqrt(self.head_size)   
+        set_0 = torch.tril(torch.ones(self.block_size, self.block_size)) \
+                            == torch.zeros(self.block_size, self.block_size) # T, T boolean
+        affin = affin.masked_fill(set_0, float("-inf"))
+        affin = affin.softmax(dim=-1)
+        out = affin @ v             # (T, T) x (B, n_head, T, C) -> (B, n_head, T, C)
+
+        out = out.transpose(1, 2).view(batch_size, self.block_size, self.n_embd)
+        return self.ln(out)
+        
 
 class MLP(nn.Module):
-    pass
+    ''' a feed-foward MLP '''
 
 
-class Decoder(nn.Module):
+    def __init__(self, n_embd, n_head, block_size, exp=False):
+
+
+
+class DecoderBlock(nn.Module):
     pass
 
 
