@@ -1,12 +1,9 @@
 playground.py
 Playground
 __pycache__
-GPT-Playground
 .ipynb_checkpoints
-Playground/names.txt
-Playground/KarpathyMakemore.ipynb
-Playground/MakemoreP3.ipynb
-Playground/tiny-shakespeare.txt
 Data/ug-data/Band-NN-Testing.ipynb
-Data/ug-data/70's.txt
 Data/ug-data/ugdata.py
+*.bin
+*.pkl
+*.txt
