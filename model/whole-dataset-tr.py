@@ -5,9 +5,6 @@ import numpy as np
 import math
 
 
-import os
-import time 
-
 ''' Simple, decode only Transformer using both the POP909 and UG datasets.
 Goal is to predict, given a sequence of chords, the next chord. '''
 
@@ -77,10 +74,29 @@ class Attention(nn.Module):
         
 
 class MLP(nn.Module):
-    ''' a feed-foward MLP '''
+    ''' a feed-foward MLP: linear, ReLU, linear, dropout '''
 
-    def __init__(self, n_embd, n_head, block_size, exp=False):
-        pass
+    def __init__(self, n_embd, h_dim=0, dropout=0.0, bias=True):
+        super().__init__()
+
+        # if no h_dim provided, make it 2*n_embd
+        if h_dim == 0:
+            h_dim = 2*n_embd
+
+        self.ln = nn.Linear(n_embd, h_dim)
+        self.act = nn.ReLU(h_dim)
+        self.proj = nn.Linear(h_dim, n_embd)
+        self.dropout = nn.Dropout1d(dropout)
+
+    def forward(self, x):
+        assert x.dim == 3, "Must be shape (B, T, C)"
+
+        x = self.ln(x)
+        x = self.act(x)
+        x = self.proj(x)
+        x = self.dropout(x)
+        return x
+
 
 
 class DecoderBlock(nn.Module):
