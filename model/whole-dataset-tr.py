@@ -4,6 +4,9 @@ import torch.nn.functional as F
 import numpy as np
 import math
 
+import os
+import pickle
+
 from pos_enc import AbsPositonalEncoding
 
 
@@ -31,6 +34,10 @@ The following people/Github repos have heavily influenced the making of this.
 1. Andrej Karpathy's NanoGPT
 2. Aditya Gomatam's Music-Transformer
 See the README for their Github repo links.
+
+TODO:
+- add relative positional embeddings in Attention class
+- add checkpoints to model.py and train.py
 '''
 
 class Attention(nn.Module):
@@ -166,15 +173,25 @@ class WholeDatasetTransformer(nn.Module):
             num_layers = n_layers,
             norm = nn.LayerNorm(self.n_embd, eps=layernorm_eps),
         )
-
         self.lm_head = nn.Linear(self.n_embd, self.vocab_size) 
 
     
+    def get_params(self):
+        """ 
+        Return's the number of parameters the Transformer has. Used to see 
+        if I should reduce the model size. 
+        Modified from https://github.com/karpathy/nanoGPT/blob/master/model.py
+        """
+        total_params = sum(p.numel() for p in self.parameters())
+        # remove embedding parameters i.e. token embedding table
+        params_no_emb = total_params - self.token_emb.weight.numel()
+        return {'total parameters': total_params, 'total except embedding':params_no_emb}
+
+
     def forward(self, x):
         assert x.dim == 2, "Must be of shape (B, T)"
         assert x.shape[1] <= self.block_size, f"Your input is {x.shape[1]} tokens. Cannot process \
-        inputs which have more than {self.block_size} tokens."
-        batch_size = x.shape[0]
+                                                inputs which have more than {self.block_size} tokens."
 
         # forward the Music Transformer
         x = self.token_emb(x)
@@ -191,18 +208,34 @@ class WholeDatasetTransformer(nn.Module):
         assert y.dim == 3, "Logits must be of shape (B, T, C)"
         assert yhat.dim == 2, "Predictions must be of shape (B, T)"
 
+        yhat.view(yhat.shape[0]*yhat.shape[1], yhat.shape[2])   # (B*T, C)
+        y.view(yhat.shape[0]*yhat.shape[1])                     # (B*T)
+        loss = lf(yhat, y)
+
+        return loss
 
 
-
-
-
-        pass
-
-
-
-    def generate(self, idx: torch.tensor, tokens=None):
+    def generate(self, idx=None, num_tokens=1):
         ''' generation function for NN'''
         
-        if tokens is None:
-            # as many tokens as needed 
-            tokens = None
+        if idx is None:
+            # populate idx with 1 batch dim and a C starting chord
+            os.chdir("../Research P1 23-24/Data/pop909")
+            with open("info.pkl", "rb") as f:
+                info_pop909 = pickle.load(f)
+                ctoi = info_pop909['ctoi']
+            c_chord = ctoi["C:maj"]
+
+            idx = torch.tensor([[c_chord]]) # shape (B, T)
+
+        for _ in range(num_tokens):
+            idx_last = idx[:, -self.block_size]
+            logits = self(idx_last)  # probibilities: (B, T, vocab_size)
+            logits_last = logits[:, -1, :]
+
+            next = torch.multinomial(logits_last, num_samples=1)
+            idx = torch.cat([idx, next])
+
+        return idx 
+
+
