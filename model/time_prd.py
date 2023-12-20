@@ -1,11 +1,8 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 import math
 
-import os
-import time 
 
 ''' Simple, multi-layer feed-forward network to generate music according to
 the user's prefered time period. The reason for a simple archiecture is 
@@ -52,7 +49,7 @@ class TimePeriod(nn.Module):
         assert context.dim() == 2, "Must be shape (B, T)"
         assert self.eval, "Must be in evaluation mode"
     
-        # only last block_size elements are allowed
+         # only last block_size elements are allowed
         context = context[:, -self.block_size:]
 
         # duplicate if less than block_size context provided

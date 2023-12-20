@@ -139,11 +139,11 @@ class DecoderBlock(nn.Module):
         assert x.dim == 3, "Must be shape (B, T, C)"
 
         ln_x = self.layernorm1(x)
-        sa_x = self.sa(x)
+        sa_x = self.sa(ln_x)
         x = x + sa_x   # residual connection for SA
 
         ln_x = self.layernorm2(x)
-        mlp_x = self.mlp(x)
+        mlp_x = self.mlp(ln_x)
         x = x + mlp_x  # residual connection for MLP
 
         return x 
@@ -179,7 +179,7 @@ class WholeDatasetTransformer(nn.Module):
     def get_params(self):
         """ 
         Return's the number of parameters the Transformer has. Used to see 
-        if I should reduce the model size. 
+        if I should reduce the model size.  
         Modified from https://github.com/karpathy/nanoGPT/blob/master/model.py
         """
         total_params = sum(p.numel() for p in self.parameters())

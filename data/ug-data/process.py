@@ -107,3 +107,4 @@ for s in tchords:
 freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
 for k, v in sorted(freq_dict.items()):
     print(f"{k}\t\t{v}")
+ 
