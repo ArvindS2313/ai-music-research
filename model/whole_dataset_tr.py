@@ -1,9 +1,8 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-import math
 
+import math
 import os
 import pickle
 
@@ -43,17 +42,16 @@ TODO:
 class Attention(nn.Module):
     ''' a multi-headed attention block'''
 
-    def __init__(self, n_embd, n_head, block_size, exp=False) -> None:
+    def __init__(self, n_embd, n_head, block_size) -> None:
         super().__init__()
         assert n_embd % n_head == 0, "Improper parameters"
 
-        self.exp = exp   # are we in experiment mode? 
         self.n_embd = n_embd
         self.head_size = n_embd/n_head   # head_size * n_head = n_embd
         self.n_head = n_head
         self.block_size = block_size
 
-        self.query = nn.Linear(self.n_embd, self.self.n_embd, bias=False) 
+        self.query = nn.Linear(self.n_embd, self.n_embd, bias=False) 
         self.key = nn.Linear(self.n_embd, self.n_embd, bias=False)
         self.val = nn.Linear(self.n_embd, self.n_embd, bias=False)
         self.ln = nn.Linear(self.n_embd, self.n_embd)  # final linear layer        
@@ -61,7 +59,7 @@ class Attention(nn.Module):
 
     def forward(self, x):
         # assert dimensionality of x
-        assert x.dim == 3, "Must be shape (B, T, C)"
+        assert x.dim() == 3, "Must be shape (B, T, C)"
         batch_size = x.shape[0]
 
         # query, key, and value vectors
@@ -86,7 +84,7 @@ class Attention(nn.Module):
         affin = affin.softmax(dim=-1)
         out = affin @ v             # (T, T) x (B, n_head, T, C) -> (B, n_head, T, C)
 
-        out = out.transpose(1, 2).view(batch_size, self.block_size, self.n_embd)
+        out = out.transpose(1, 2).contiguous().view(batch_size, self.block_size, self.n_embd)
         return self.ln(out)
         
 
@@ -106,7 +104,7 @@ class MLP(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        assert x.dim == 3, "Must be shape (B, T, C)"
+        assert x.dim() == 3, "Must be shape (B, T, C)"
 
         x = self.ln(x)
         x = self.act(x)
@@ -136,7 +134,7 @@ class DecoderBlock(nn.Module):
         self.mlp = MLP(self.n_embd, h_dim, ffn_bias, dropout)
 
     def forward(self, x):
-        assert x.dim == 3, "Must be shape (B, T, C)"
+        assert x.dim() == 3, "Must be shape (B, T, C)"
 
         ln_x = self.layernorm1(x)
         sa_x = self.sa(ln_x)
@@ -149,6 +147,7 @@ class DecoderBlock(nn.Module):
         return x 
     
 
+
 class WholeDatasetTransformer(nn.Module):
     ''' Implements a decoder only, Transformer using Multi-Headed 
     Attention and an MLP. Uses the torch.nn.TransformerDecoder archiecture'''
@@ -160,19 +159,17 @@ class WholeDatasetTransformer(nn.Module):
         super().__init__()
         self.block_size = block_size
         self.n_embd = n_embd
+        self.n_layers = n_layers
         self.vocab_size = vocab_size
 
         self.abs_pe = AbsPositonalEncoding(self.block_size, self.n_embd, dropout)
         self.token_emb = nn.Embedding(self.vocab_size, self.n_embd)
-        self.dropout = nn.Dropout(self.n_embd)
+        self.dropout = nn.Dropout(dropout)
+        self.ln = nn.LayerNorm(self.n_embd, eps=layernorm_eps)
 
         # Transformer Decoder which uses DecoderBlock class
-        self.tr = nn.TransformerDecoder(
-            decoder_layer = DecoderBlock(self.n_embd, n_head, h_dim, self.block_size, 
-                                         dropout, ffn_bias, layernorm_eps),
-            num_layers = n_layers,
-            norm = nn.LayerNorm(self.n_embd, eps=layernorm_eps),
-        )
+        self.decoder = nn.ModuleList([DecoderBlock(n_embd, n_head, h_dim, block_size, 
+                                                   dropout, ffn_bias, layernorm_eps) for _ in range(n_layers)])
         self.lm_head = nn.Linear(self.n_embd, self.vocab_size) 
 
     
@@ -189,27 +186,31 @@ class WholeDatasetTransformer(nn.Module):
 
 
     def forward(self, x):
-        assert x.dim == 2, "Must be of shape (B, T)"
+        assert x.dim() == 2, "Must be of shape (B, T)"
         assert x.shape[1] <= self.block_size, f"Your input is {x.shape[1]} tokens. Cannot process \
                                                 inputs which have more than {self.block_size} tokens."
 
         # forward the Music Transformer
         x = self.token_emb(x)
-        x = x * math.sqrt(self.n_embd) # as per Vaswani 2017
         x += self.abs_pe(x)
         x = self.dropout(x)
 
-        x = self.tr(x)  # pass through Transformer decoder
+        for layer in self.decoder:
+            x = layer(x)
+
+        x = self.ln(x)
+
+        x = self.ln(x)
         logits = self.lm_head(x) 
         return logits
     
 
     def get_loss(self, yhat, y, lf=F.cross_entropy):
-        assert y.dim == 3, "Logits must be of shape (B, T, C)"
-        assert yhat.dim == 2, "Predictions must be of shape (B, T)"
+        assert y.dim() == 2, "Logits must be of shape (B, T, C)"
+        assert yhat.dim() == 3, "Predictions must be of shape (B, T)"
 
-        yhat.view(yhat.shape[0]*yhat.shape[1], yhat.shape[2])   # (B*T, C)
-        y.view(yhat.shape[0]*yhat.shape[1])                     # (B*T)
+        yhat = yhat.view(yhat.shape[0]*yhat.shape[1], yhat.shape[2])   # (B*T, C)
+        y = y.view(y.shape[0]*y.shape[1])                     # (B*T)
         loss = lf(yhat, y)
 
         return loss
@@ -228,14 +229,6 @@ class WholeDatasetTransformer(nn.Module):
 
             idx = torch.tensor([[c_chord]]) # shape (B, T)
 
-        for _ in range(num_tokens):
-            idx_last = idx[:, -self.block_size]
-            logits = self(idx_last)  # probibilities: (B, T, vocab_size)
-            logits_last = logits[:, -1, :]
-
-            next = torch.multinomial(logits_last, num_samples=1)
-            idx = torch.cat([idx, next])
-
-        return idx 
-
+        
+        
 

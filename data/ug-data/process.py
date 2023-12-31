@@ -76,9 +76,9 @@ val_ids = [convert(s) for s in val_data]
 
 # make all songs have same length so can be made np.array
 max_train = max([len(a) for a in train_ids])
-train_ids = np.array([np.array(song + [0 for _ in range(max_train - len(song))]) for song in train_ids])
+train_ids = np.array([np.array(song + [0 for _ in range(max_train - len(song))]) for song in train_ids], dtype=np.uint16)
 max_val = max([len(a) for a in val_ids])
-val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for song in val_ids])
+val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for song in val_ids], dtype=np.uint16)
 
 # exporting
 info = {
