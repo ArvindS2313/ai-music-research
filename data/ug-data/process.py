@@ -3,16 +3,16 @@ splits for the NN. Different than POP909 in that genre and time period MLPs
 will be generated from here as well. Also, the UG dataset will have errors
 in chords that will be taken care of.'''
 
-import os 
+import os
 from ugdata import songs
 import cleanup
 import numpy as np 
 import pickle
+import dill
 
 # big lists 
 all_chords = []
 artists = []
-
 
 # process data
 for i in range(len(songs)):
@@ -25,9 +25,9 @@ for i in range(len(songs)):
     artists.append(artist)
 
 # clean chords and keys
-tchords = cleanup.cleanup(all_chords)
+rand = False
+tchords = cleanup.cleanup(all_chords, rand=rand)
 print(f"tchords has a length of {len(tchords)}")
-
 
 # get info about the transposed chords
 unique_chords = sorted(list(set([ch for s in tchords for ch in s])))
@@ -37,20 +37,11 @@ print("all unique chords", "   ".join(unique_chords))
 print("vocab size: ", vocab_size)
 
 
-# create mappings
-os.chdir("../Research P1 23-24/Data/pop909")
-with open("info.pkl", "rb") as f:
-    info_pop909 = pickle.load(f)
-    ctoi_pop909 = info_pop909['ctoi']
-    print(f"ctoi pop909 {ctoi_pop909}")
-    itoc_pop909 = info_pop909['itoc']
-
-
-# Bdim, Cdim, & F#dim in UG dataset but not in POP909
-ctoi = ctoi_pop909 | {"B:dim":len(ctoi_pop909), "C:dim":len(ctoi_pop909)+1, 
-                      "F#:dim":len(ctoi_pop909)+2, "Db:sus4":len(ctoi_pop909)+3 }
+ctoi = {y:x+1 for x, y in enumerate(unique_chords)}
 itoc = {y:x for x, y in ctoi.items()}
 def convert(d):
+    ctoi = {y:x+1 for x, y in enumerate(unique_chords)}
+    itoc = {y:x for x, y in ctoi.items()}
     # convert int to string or string to int
     if type(d[0]) == int:
         return [itoc[i] for i in d]
@@ -83,20 +74,23 @@ val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for
 # exporting
 info = {
     'vocab_size': vocab_size,
-    'num_chords': num_chords,
+    'unique_chords': unique_chords,
     'ctoi': ctoi,
     'itoc': itoc,
+    'max_train': max_train,
+    'max_val': max_val,
+    'len_td': len(train_data),
+    'len_vd': len(val_data),
+    'convert': convert
 }
 
-# not working? that's weird. guess we would need to import this file everytime?
-with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), f'ug{"-rand" if rand else ""}-info.pkl'), 'wb') as f:
     print("here, executing this command")
-    pickle.dump(info, f)
-
+    dill.dump(info, f)
 
 # export train_ids and val_ids to .bin file
-train_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-train.bin'))
-val_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-val.bin')) 
+train_ids.tofile(os.path.join(os.path.dirname(__file__), f'{"rand-" if rand else ""}train.bin'))
+val_ids.tofile(os.path.join(os.path.dirname(__file__), f'{"rand-" if rand else ""}val.bin')) 
 
 
 # Data distributions
@@ -107,4 +101,3 @@ for s in tchords:
 freq_dict = {round(100*i/num_chords, 4):c for c, i in freq_dict.items()}
 for k, v in sorted(freq_dict.items()):
     print(f"{k}\t\t{v}")
- 

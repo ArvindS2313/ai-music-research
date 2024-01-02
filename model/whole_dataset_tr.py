@@ -4,9 +4,13 @@ import torch.nn.functional as F
 
 import math
 import os
+from os.path import dirname, abspath
 import pickle
 
-from pos_enc import AbsPositonalEncoding
+import sys
+d = dirname(dirname(abspath(__file__)))
+sys.path.append(d)
+from model.pos_enc import AbsPositonalEncoding
 
 
 ''' Simple, decode only Transformer using both the POP909 and UG datasets.

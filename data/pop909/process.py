@@ -2,6 +2,7 @@ import os
 import numpy as np 
 from cleanup import cleanup
 import pickle
+import dill
 
 ''' Prepare the POP909 data to be used for the NN. This includes a call 
 to the cleanup function which will change chords if necessary'''
@@ -29,7 +30,8 @@ for i in range(1, 910): # pop909 has 909 songs
     keys.append(k_arr) # twice b/c the chords are getting appended twice
 
 # cleanup chords and keys
-tchords = cleanup(chords, keys)
+rand = True
+tchords = cleanup(chords, keys, rand=rand)
 
 # get info about the transposed chords
 unique_chords = sorted(list(set([ch for s in tchords for ch in s])))
@@ -43,6 +45,8 @@ print("vocab size: ", vocab_size)
 ctoi = {y:x+1 for x, y in enumerate(unique_chords)}
 itoc = {y:x for x, y in ctoi.items()}
 def convert(d):
+    ctoi = {y:x+1 for x, y in enumerate(unique_chords)}
+    itoc = {y:x for x, y in ctoi.items()}
     # convert int to string or string to int
     if type(d[0]) == int:
         return [itoc[i] for i in d]
@@ -69,27 +73,32 @@ val_ids = [convert(s) for s in val_data]
 
 # make all songs have same length so can be made np.array
 max_train = max([len(a) for a in train_ids])
-train_ids = np.array([np.array(song + [0 for _ in range(max_train - len(song))]) for song in train_ids])
+train_ids = np.array([np.array(song + [0 for _ in range(max_train - len(song))]) for song in train_ids], dtype=np.uint16)
 max_val = max([len(a) for a in val_ids])
-val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for song in val_ids])
+val_ids = np.array([np.array(song + [0 for _ in range(max_val - len(song))]) for song in val_ids], dtype=np.uint16)
 
 # exporting
 info = {
     'vocab_size': vocab_size,
-    'num_chords': num_chords,
+    'unique_chords': unique_chords,
     'ctoi': ctoi,
     'itoc': itoc,
+    'max_train': max_train,
+    'max_val': max_val,
+    'len_td': len(train_data),
+    'len_vd': len(val_data),
+    'convert': convert
 }
 
 # not working? that's weird. guess we would need to import this file everytime?
-with open(os.path.join(os.path.dirname(__file__), 'info.pkl'), 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), f'pop909{"-rand" if rand else ""}-info.pkl'), 'wb') as f:
     print("here, executing this command")
-    pickle.dump(info, f)
+    dill.dump(info, f)
 
 
 # export train_ids and val_ids to .bin file
-train_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-train.bin'))
-val_ids.tofile(os.path.join(os.path.dirname(__file__), 'rand-val.bin')) 
+train_ids.tofile(os.path.join(os.path.dirname(__file__), f'{"rand-" if rand else ""}train.bin'))
+val_ids.tofile(os.path.join(os.path.dirname(__file__), f'{"rand-" if rand else ""}val.bin')) 
 
 freq_dict = {c:0 for c, i in ctoi.items()}
 for s in tchords: 

@@ -2,7 +2,7 @@ import numpy as np
 import random
 import os 
 
-def transpose(key, chord):
+def transpose(key, chord, rand):
     ''' Transpose chord in a given key to C major or A minor'''
     
     # a lot of extras; better be safe than sorry
@@ -25,7 +25,10 @@ def transpose(key, chord):
     index_cchord = chord_order.index(cchord)
     new_index = index_cchord + diff
     # create transposed chord
-    tchord = randomize(chord_order[new_index] + ":" + echord)
+    if rand:
+        tchord = randomize(chord_order[new_index] + ":" + echord)
+    else:
+        tchord = chord_order[new_index] + ":" + echord
 
     return tchord
 
@@ -97,7 +100,7 @@ def simplify(end):
     return final_end
 
 
-def cleanup(chords, keys):
+def cleanup(chords, keys, rand=True):
     ''' Cleans up the chords by doing the following:
     - Removes nonchords
     - Transposes all chords to C major and roman numerals 
@@ -131,7 +134,7 @@ def cleanup(chords, keys):
                 # change key if needed
                 key = change_key(key)
                 if key != "":
-                    tchord = adjust(transpose(key, song_chords[c][2]))
+                    tchord = adjust(transpose(key, song_chords[c][2], rand))
                     tchords.append(tchord)
     
         all_tchords.append(tchords)

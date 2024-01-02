@@ -4,7 +4,7 @@ import random
 
 ''' Cleanup and transpose the chords to C major. Consists of multiple functions.'''
 
-def cleanup(all_chords):
+def cleanup(all_chords, rand=True):
     ''' main method'''
 
     all_tchords = []
@@ -42,7 +42,10 @@ def cleanup(all_chords):
             echord = echords[c]
             tchord = transpose(cchord, key) + echord
             # print(f"Chord went from {cchord + echord} to {tchord}")
-            tchord = randomize(adjust(simplify_end(tchord)))
+            if rand:
+                tchord = randomize(adjust(simplify_end(tchord)))
+            else:
+                tchord = adjust(simplify_end(tchord))
             # print(f"FINAL tchord: {tchord}")
             tchords.append(tchord)
 
