@@ -7,3 +7,5 @@ Data/ug-data/ugdata.py
 *.bin
 *.pkl
 *.txt
+*.pth
+*.pt

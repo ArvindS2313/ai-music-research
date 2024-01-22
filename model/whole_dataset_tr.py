@@ -222,16 +222,23 @@ class WholeDatasetTransformer(nn.Module):
 
     def generate(self, idx=None, num_tokens=1):
         ''' generation function for NN'''
-        
-        if idx is None:
-            # populate idx with 1 batch dim and a C starting chord
-            os.chdir("../Research P1 23-24/Data/pop909")
-            with open("info.pkl", "rb") as f:
-                info_pop909 = pickle.load(f)
-                ctoi = info_pop909['ctoi']
-            c_chord = ctoi["C:maj"]
 
-            idx = torch.tensor([[c_chord]]) # shape (B, T)
+        for i in range(num_tokens):
+            # if the context is larger than the block_size, crop it
+            if idx.shape[1] > self.block_size:
+                idx = idx[:, :-self.block_size]
+
+            logits = self(idx)
+            norm_logits = F.softmax(logits, dim=-1)
+            probs = norm_logits[:, -1, :]
+            next = torch.multinomial(probs, num_samples=1)
+            print(next.shape)
+            print(idx.shape)
+            idx = torch.cat([idx, next], dim=-1)
+
+        return idx
+
+                
 
         
         

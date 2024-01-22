@@ -49,22 +49,15 @@ class WholeDataset(Dataset):
         # convert and re-embed to numbers
         pop909_ids = [[pop909_info['itoc'][c] for c in s] for s in pop909_ids]
         ug_ids = [[pop909_info['itoc'][c] for c in s] for s in ug_ids]
-        self.combined_itoc = self._get_vocab()
+        self.combined_itoc = self.get_vocab()
         self.combined_ctoi = {y:x for x,y in self.combined_itoc.items()}
 
         pop909_ids = [[self.combined_ctoi[c] for c in s] for s in pop909_ids]
         ug_ids = [[self.combined_ctoi[c] for c in s] for s in ug_ids]
 
         return pop909_ids, ug_ids
-    
 
-    def save(self):
-        '''Saves the updated dataset info into a .pkl file.'''
-        with open("info.pkl", "wb") as f:
-            pickle.dump(len(self._get_vocab()), f)
-
-
-    def _get_vocab(self):
+    def get_vocab(self):
         pop909dir = os.path.join("pop909")
         ugdir = os.path.join("ug-data")
 
