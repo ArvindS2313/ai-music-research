@@ -5,74 +5,101 @@ import dill
 import pickle
 import os
 
+from ugdata import songs
+import ug_cleanup
+import pop909_cleanup
+
+
 ''' Whole dataset combination from the pop909 and ug-data libraries'''
 
-class WholeDataset(Dataset): 
+def clean_pop909(rand=False):
+    # "Big" arrays
+    chords = []
+    keys = []
+
+    # download/get data files
+    os.chdir("../")
+    for i in range(1, 910): # pop909 has 909 songs
+        num = f"{'0'*(3-len(str(i)))}{i}"
+        # read in data, split, and convert to nparray
+        with open(f"POP909/{num}/chord_audio.txt") as ca:
+            ca_arr = [line.split("\t") for line in ca.read().splitlines()]
+        with open(f"POP909/{num}/chord_midi.txt") as cm:
+            cm_arr = [line.split("\t") for line in cm.read().splitlines()]
+        with open(f"POP909/{num}/key_audio.txt") as k:
+            k_arr = [line.split("\t") for line in k.read().splitlines()]
+
+        chords.append(ca_arr)
+        chords.append(cm_arr)
+        keys.append(k_arr)
+        keys.append(k_arr) # twice b/c the chords are getting appended twice
+
+    tchords = pop909_cleanup.cleanup(chords, keys, rand=rand)
+    return tchords
     
-    def __init__(self, train=True, rand=True, block_size=8): 
+
+def clean_ug(rand=False):
+    # big lists 
+    all_chords = []
+    artists = []
+
+    # process data
+    for i in range(len(songs)):
+        song = songs[i]
+
+        # append stuff to files
+        chords = song[5].split(",")
+        all_chords.append(chords)
+        artist = song[2]
+        artists.append(artist)
+
+    tchords = ug_cleanup.cleanup(all_chords, rand=rand)
+    return tchords
+     
+
+class WholeDataset(Dataset):
+    '''
+    1. Preprocesses the data from respective files and transposes into C major
+    2. Converts to numerical representation and saved an itoc and a ctoi
+    3. Uses PyTorch to save the entire representation to be used in train.py
+    '''
+
+    def __init__(self, rand=False, train=True, block_size=8, split=0.9):
         super().__init__()
-
+        self.rand = rand    
         self.train = train
-        self.type = "train" if self.train else "val"
-        self.rand = rand
         self.block_size = block_size
+        self.enumerate()
 
-        pop909_ids, ug_ids = self._get_ids()
-        ids = pop909_ids + ug_ids
-        self.X = torch.tensor([l[i:i+block_size] for l in ids for i in range(len(l)-self.block_size)])
-        self.Y = torch.tensor([l[i:i+block_size] for l in ids for i in range(1, len(l)-self.block_size+1)])
+        self.X = torch.tensor([l[i:i+block_size] for l in self.chords for i in range(len(l)-self.block_size)])
+        self.Y = torch.tensor([l[i:i+block_size] for l in self.chords for i in range(1, len(l)-self.block_size+1)])
 
+        if self.train:
+            self.X = self.X[:int(len(self.X)*split)]
+            self.Y = self.Y[:int(len(self.Y)*split)]
+        else:
+            self.X = self.X[int(len(self.X)*split):]
+            self.Y = self.Y[int(len(self.Y)*split):]
 
-    def _get_ids(self):
-        # load data from pop909 and ug-data and combine them 
-        pop909dir = os.path.join("pop909")
-        ugdir = os.path.join("ug-data")
-        pop909_bin = os.path.join("data", pop909dir, f"{'rand-' if self.rand else ''}{self.type}.bin")
-        ug_bin = os.path.join("data", ugdir, f"{'rand-' if self.rand else ''}{self.type}.bin")
+        
+    def enumerate(self):
+        self.ug_chords = clean_ug()
+        self.pop909_chords = clean_pop909()
+        self.chords = self.ug_chords + self.pop909_chords
 
-        # retrieve and load pkl files 
-        pop909_pkl = os.path.join("data", pop909dir, f"pop909-{'rand-' if self.rand else ''}info.pkl")
-        ug_pkl = os.path.join("data", ugdir, f"ug-{'rand-' if self.rand else ''}info.pkl")
-        with open(pop909_pkl, 'rb') as f:
-            pop909_info = dill.load(f)
-        with open(ug_pkl, 'rb') as f:
-            ug_info = dill.load(f)
+        # form set and assign numbers
+        all = set()
+        for s in self.chords:
+            all |= set(s)
 
-        # get the pop909/ug ids
-        pop909_ids = np.fromfile(pop909_bin, dtype=np.uint16).reshape(
-            pop909_info[f'len_{"td" if self.train else "vd"}'], pop909_info[f'max_{self.type}']).tolist()
-        ug_ids = np.fromfile(ug_bin, dtype=np.uint16).reshape(
-            ug_info[f'len_{"td" if self.train else "vd"}'], ug_info[f'max_{self.type}']).tolist()
-        pop909_ids = [l[:l.index(0)] if 0 in l else l for l in pop909_ids]
-        ug_ids = [l[:l.index(0)] if 0 in l else l for l in ug_ids]
+        self.itoc = {x:y for x, y in enumerate(all)}
+        self.ctoi = {y:x for x, y in self.itoc.items()}
+        
+        num_chords = []
+        for s in self.chords:
+            num_chords.append([self.ctoi[c] for c in s])
 
-        # convert and re-embed to numbers
-        pop909_ids = [[pop909_info['itoc'][c] for c in s] for s in pop909_ids]
-        ug_ids = [[pop909_info['itoc'][c] for c in s] for s in ug_ids]
-        self.combined_itoc = self.get_vocab()
-        self.combined_ctoi = {y:x for x,y in self.combined_itoc.items()}
-
-        pop909_ids = [[self.combined_ctoi[c] for c in s] for s in pop909_ids]
-        ug_ids = [[self.combined_ctoi[c] for c in s] for s in ug_ids]
-
-        return pop909_ids, ug_ids
-
-    def get_vocab(self):
-        pop909dir = os.path.join("pop909")
-        ugdir = os.path.join("ug-data")
-
-        pop909_rand = os.path.join("data", pop909dir, f"pop909-rand-info.pkl")
-        pop909 = os.path.join("data", pop909dir, f"pop909-info.pkl")
-        ug_rand = os.path.join("data", ugdir, f"ug-rand-info.pkl")
-        ug = os.path.join("data", ugdir, f"ug-info.pkl")
-
-        vocab = set()
-        for p in [pop909_rand, pop909, ug_rand, ug]:
-            with open(p, 'rb') as f:
-                info = dill.load(f)
-                vocab |= set(info['unique_chords'])
-
-        return dict(enumerate(vocab))
+        self.chords = num_chords
 
 
     def __getitem__(self, index):

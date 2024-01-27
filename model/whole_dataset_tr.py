@@ -226,14 +226,14 @@ class WholeDatasetTransformer(nn.Module):
         for i in range(num_tokens):
             # if the context is larger than the block_size, crop it
             if idx.shape[1] > self.block_size:
-                idx = idx[:, :-self.block_size]
+                inp = idx[:, -self.block_size:]
+            else:
+                inp = idx
 
-            logits = self(idx)
+            logits = self(inp)
             norm_logits = F.softmax(logits, dim=-1)
             probs = norm_logits[:, -1, :]
             next = torch.multinomial(probs, num_samples=1)
-            print(next.shape)
-            print(idx.shape)
             idx = torch.cat([idx, next], dim=-1)
 
         return idx
