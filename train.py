@@ -10,6 +10,8 @@ TODO: Implement gradient clipping
 """
 
 import torch 
+import os
+import sys
 import torch.nn.functional as F
 import argparse
 import time
@@ -18,7 +20,6 @@ from model.time_prd import TimePeriod
 from model.whole_dataset_tr import WholeDatasetTransformer
 from torch.utils.data.dataloader import DataLoader
 from data.whole_dataset import WholeDataset
-
 
 class Train:
 
@@ -40,7 +41,7 @@ class Train:
         # set up training data and dataloaders 
         self.train_data = WholeDataset(train=True, rand=self.rand, block_size=self.block_size)
         self.val_data = WholeDataset(train=False, rand=self.rand, block_size=self.block_size)
-        self.vocab_size = len(self.val_data.get_vocab())
+        self.vocab_size = len(self.val_data.itoc)
 
         self.train_dl = DataLoader(
             dataset=self.train_data,
@@ -206,10 +207,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     hparams = vars(args)
 
-
-    trainer = Train(hparams, bool(hparams['num_epochs']), False)
+    trainer = Train(hparams, bool(hparams['num_epochs']), True)
     trainer.run()
+    print(len(trainer.train_data))
 
+    os.chdir(f'{os.path.dirname(__file__)}')
     save_path = "saved-models/model.pth"
     torch.save(trainer.model, save_path)
-
+    

@@ -13,19 +13,18 @@ Supports two different types of generation processes: fixed tokens or regressive
 
 
 # Basic version, for now
-def generate(block_size=20, num_tokens=1):
+def generate(block_size=10, num_tokens=1):
     path = 'saved-models/model.pth'
     tr_model = torch.load(path)
     tr_model.eval()
 
-    itoc = WholeDataset().combined_itoc
-    ctoi = WholeDataset().combined_ctoi
-
-    context = torch.tensor([[ctoi["C:maj"]]]).repeat(1, block_size)
-    chords = [itoc[x] for x in tr_model.generate(idx=context, num_tokens=80).tolist()[0]][60:]
+    itoc = WholeDataset(rand=True).itoc
+    ctoi = WholeDataset(rand=True).ctoi
+    context = torch.tensor([[ctoi["C:maj"] for i in range(block_size)]])
+    chords = tr_model.generate(idx=context, num_tokens=num_tokens)
+    chords = [itoc[c] for c in chords.tolist()[0]]
     return chords
 
 
-
-print(generate())
+print(generate(num_tokens=40))
 

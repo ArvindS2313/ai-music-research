@@ -1,13 +1,16 @@
-import torch
-from torch.utils.data.dataloader import Dataset, DataLoader
-import numpy as np 
-import dill
-import pickle
+import sys
 import os
+from os.path import dirname, abspath
+d = dirname(dirname(abspath(__file__)))
+sys.path.append(d)
 
-from ugdata import songs
-import ug_cleanup
-import pop909_cleanup
+import torch
+from torch.utils.data.dataloader import Dataset
+import time
+
+from data.ugdata import songs
+import data.ug_cleanup as ug_cleanup
+import data.pop909_cleanup as pop909_cleanup
 
 
 ''' Whole dataset combination from the pop909 and ug-data libraries'''
@@ -18,7 +21,8 @@ def clean_pop909(rand=False):
     keys = []
 
     # download/get data files
-    os.chdir("../")
+    if os.getcwd() == d:
+        os.chdir("../")
     for i in range(1, 910): # pop909 has 909 songs
         num = f"{'0'*(3-len(str(i)))}{i}"
         # read in data, split, and convert to nparray
@@ -33,6 +37,7 @@ def clean_pop909(rand=False):
         chords.append(cm_arr)
         keys.append(k_arr)
         keys.append(k_arr) # twice b/c the chords are getting appended twice
+
 
     tchords = pop909_cleanup.cleanup(chords, keys, rand=rand)
     return tchords
@@ -83,14 +88,15 @@ class WholeDataset(Dataset):
 
         
     def enumerate(self):
-        self.ug_chords = clean_ug()
-        self.pop909_chords = clean_pop909()
+        self.ug_chords = clean_ug(self.rand)
+        self.pop909_chords = clean_pop909(self.rand)
         self.chords = self.ug_chords + self.pop909_chords
 
         # form set and assign numbers
         all = set()
         for s in self.chords:
             all |= set(s)
+        all = sorted(list(all))
 
         self.itoc = {x:y for x, y in enumerate(all)}
         self.ctoi = {y:x for x, y in self.itoc.items()}
@@ -107,4 +113,3 @@ class WholeDataset(Dataset):
      
     def __len__(self):
         return len(self.X)
-    
