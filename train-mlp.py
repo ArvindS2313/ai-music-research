@@ -11,36 +11,45 @@ TODO: Implement gradient clipping
 
 import torch 
 import os
+import sys
 import torch.nn.functional as F
 import argparse
 import time
 
-from model.whole_dataset_tr import WholeDatasetTransformer
+from data.time_period_dataset import TimePeriodDataset
 from torch.utils.data.dataloader import DataLoader
-from data.whole_dataset import WholeDataset
+from model.time_prd import TimePeriod
+
 
 class Train:
 
-    def __init__(self, hparams: dict, epoch_tr: bool, rand=True):
-        '''
-        Initalizes the data if it was not passed in already, sets up optimizers and 
-        constants, and declares the model.
-        '''
-
-        self.epoch_tr = epoch_tr
-        self.rand = rand
+    def __init__(self, hparams: dict, epoch_tr: bool, norm="layer", rand=False):
+        self.kind = hparams['kind']  # time period, genre or band
+        self.type = hparams['type']  # the specific time period, genre, or band 
         self.hparams = hparams
+        self.epoch_tr = epoch_tr  # use epochs or iters (NOW: only iters supported)
+        self.rand = rand
+        self.norm = norm
+
         # document important params
         self.block_size = self.hparams['block_size']
         self.batch_size = self.hparams['batch_size']
+        self.h_dim = self.hparams['hidden_dimension']
         self.n_embd = self.hparams['n_embd']
         self.num_iters = self.hparams['num_iters']
 
-        # set up training data and dataloaders 
-        self.train_data = WholeDataset(train=True, rand=self.rand, block_size=self.block_size)
-        self.val_data = WholeDataset(train=False, rand=self.rand, block_size=self.block_size)
-        self.vocab_size = len(self.val_data.itoc)
+        # set up training data and dataloaders
+        if self.kind == "time":
+            print(self.type)
+            self.train_data = TimePeriodDataset(time_prd=self.type, rand=self.rand, 
+                                                train=True, block_size=self.block_size)
+            self.val_data = TimePeriodDataset(time_prd=self.type, rand=self.rand, 
+                                                train=False, block_size=self.block_size)
+        else:
+            pass # we don't have datasets for these... yet!
 
+
+        self.vocab_size = len(self.train_data.itoc)  # should give same for val
         self.train_dl = DataLoader(
             dataset=self.train_data,
             batch_size= self.batch_size, 
@@ -49,35 +58,30 @@ class Train:
         self.val_dl = DataLoader(
             dataset=self.val_data,
             batch_size= self.batch_size, 
-            shuffle= True,
+            shuffle=True
         )
 
         self.train_iter = iter(self.train_dl)
         self.val_iter = iter(self.val_dl)
 
-        # set up model and optimizers 
-        self.model = WholeDatasetTransformer(
-            n_embd = self.n_embd, n_layers = self.hparams['num_layers'],
-            vocab_size = self.vocab_size, n_head = self.hparams['n_head'],
-            h_dim = self.hparams['hidden_dimension'], 
-            block_size = self.hparams['block_size'],
-            dropout = self.hparams['dropout'], 
-            ffn_bias = self.hparams["ffn_bias"],
-            layernorm_eps = self.hparams['layernorm_eps']
+        # set up model and optimizers
+        self.model = TimePeriod(
+            n_embd=self.n_embd,
+            vocab_size=self.vocab_size, 
+            block_size=self.block_size,
+            n_hidden=self.h_dim,
+            norm=self.norm
         )
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=hparams['learning_rate'])
-        print("num parameters", self.model.get_params())        
+        print("num parameters", self.model.get_params())    
+        print(f"length train: {len(self.train_data)} \t length val: {len(self.val_data)}")  
 
-        # set up times
-        self.start = None
 
-        
-    def run(self):
+    def run(self, ):
         '''
         Performs training sequence
         '''
 
-        self.start = time.time()    # begin start time
         self.model.train()
 
         # if epoch_tr, train for a set number of epochs 
@@ -95,6 +99,7 @@ class Train:
                     try:
                         x, y = next(self.train_iter)
                     except StopIteration:
+                        print("train ran out") 
                         self.train_iter = iter(self.train_dl)
                         x, y = next(self.train_iter)
 
@@ -105,10 +110,10 @@ class Train:
                         self.model.train()
 
                     self.logits = self.model(x)
-                    self.loss = self.model.get_loss(self.logits, y, lf=F.cross_entropy)
+                    self.loss = self.model.get_loss(self.logits, y)
 
-                    if i % self.hparams["display_interval"] == 0:
-                        print("Loss:   ", self.loss.item())
+                    # if i % self.hparams["display_interval"] == 0:
+                    #     print("Loss:   ", self.loss.item())
 
                     self.optimizer.zero_grad(set_to_none=True)
                     self.loss.backward()
@@ -121,7 +126,8 @@ class Train:
 
             # print(f"Fi_time = {self.end} - {self.start}")
             # print(f"Total Training Time = {self.train_time}")
-            return 
+                
+        return 
 
 
     @torch.no_grad()
@@ -134,29 +140,30 @@ class Train:
             try:
                 x_tr, y_tr = next(self.train_iter)
             except StopIteration:
+                print("evaluate train ran out") 
                 self.train_iter = iter(self.train_dl)
                 x_tr, y_tr = next(self.train_iter)
         
             self.logits = self.model(x_tr)
-            self.loss = self.model.get_loss(self.logits, y_tr, lf=F.cross_entropy)
+            self.loss = self.model.get_loss(self.logits, y_tr)
             self.avg_tr += self.loss
 
             try:
                 x_val, y_val = next(self.val_iter)
             except StopIteration:
-                print("Executing here") 
+                print("evaluate val ran out") 
                 self.val_iter = iter(self.val_dl)
                 x_val, y_val = next(self.val_iter)
 
             self.logits = self.model(x_val)
-            self.loss = self.model.get_loss(self.logits, y_val, lf=F.cross_entropy)
+            self.loss = self.model.get_loss(self.logits, y_val)
             self.avg_val += self.loss
 
         self.avg_tr /= hparams['eval_iters']
         self.avg_val /= hparams['eval_iters']
         print(f"EVALUATION: \t Average Train  {self.avg_tr} \t Average Val {self.avg_val}")
-        
 
+        
 if __name__ == "__main__":
     '''
     Users have the ability to input their own hyperparameters for increased customizability;
@@ -183,35 +190,29 @@ if __name__ == "__main__":
                         "during training; default=4", type=int)
     parser.add_argument("-ne", "--n-embd", help="dimensionality that inputs are encoded in; default = 32", 
                         type=int)
-    parser.add_argument("-nh", "--n-head", help="number of parallel-processed heads that perform multi-"
-                        "headed attention.", type=int)
     parser.add_argument("-n-lay", "--num-layers", help="the number of layers the Transformer decoder block"
                         "should have", type=int)
     parser.add_argument("-block", "--block-size", help="the number of tokens taken into account as context;"
                         "by default, block-size is set to 8", type=int)
+    parser.add_argument("-hdim", "--hidden-dimension", help="The dimension of the hidden layer of the MLP",
+                        type=int)
     parser.add_argument("-bias", "--ffn-bias",
                         help="whether or not the feedforward part of the transformer block should include a"
                         "bias", type=bool)
-    parser.add_argument("-eps", "--layernorm-eps", 
+    parser.add_argument("-eps", "--norm-eps", 
                         help="the epsilon for the layernorms, used to ensure that the dividing normalization"
                         "is not 0", type=float)
-    parser.add_argument("-drop", "--dropout", help="percentage of neurons set to 0 during training", type=float)
-    parser.add_argument("-h-dim", "--hidden-dimension", 
-                        help="the size of the hidden layer for the feedforward NN; default set to 4*n_embd", 
-                        type=int)
     parser.add_argument("-lr", "--learning-rate", help="the rate at which the network learns", type=float)
     parser.add_argument("--betas", help="betas for Adam optimizer", type=str)
-    parser.add_argument("-rand", "--randomize-data", help="should the training/validation data be randmoized"
-                        "to provide more variation in the outputs", type=bool)
+    parser.add_argument("-t", "--type", help="kind of data: for time period, the time period; for genre," 
+                        "the exact genre; for band, the band name")
+    parser.add_argument("-k", "--kind", help="the type of MLP requested: time period, genre, or band")
     
     args = parser.parse_args()
     hparams = vars(args)
 
-    trainer = Train(hparams, bool(hparams['num_epochs']), False)
+    trainer = Train(hparams, epoch_tr=False, norm="layer", rand=False)
     trainer.run()
-    print(len(trainer.train_data))
 
-    os.chdir(f'{os.path.dirname(__file__)}')
-    save_path = f"saved-models/model{'-rand' if hparams['randomize_data'] else ''}.pth"
+    save_path = f"saved-models/time-prd.pth"
     torch.save(trainer.model, save_path)
-    

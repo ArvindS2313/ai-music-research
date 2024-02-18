@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import os
+from os.path import dirname, abspath
+import sys
+d = dirname(dirname(abspath(__file__)))
+sys.path.append(d)
 
 
 ''' Simple, multi-layer feed-forward network to generate music according to
@@ -60,3 +65,14 @@ class TimePeriod(nn.Module):
             probs = F.softmax(logits, dim=-1)
             pred = torch.multinomial(probs, num_samples=1)
             context = torch.cat((context[:, 1:], pred), dim=1)
+
+    def get_params(self):
+        """ 
+        Return's the number of parameters the Transformer has. Used to see 
+        if I should reduce the model size.  
+        Modified from https://github.com/karpathy/nanoGPT/blob/master/model.py
+        """
+        total_params = sum(p.numel() for p in self.parameters())
+        # remove embedding parameters i.e. token embedding table
+        params_no_emb = total_params - self.layers[0].weight.numel()
+        return {'total parameters': total_params, 'total except embedding':params_no_emb}

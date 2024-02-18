@@ -78,20 +78,21 @@ class WholeDataset(Dataset):
 
         self.X = torch.tensor([l[i:i+block_size] for l in self.chords for i in range(len(l)-self.block_size)])
         self.Y = torch.tensor([l[i:i+block_size] for l in self.chords for i in range(1, len(l)-self.block_size+1)])
+        max = int(len(self.Y)*split)
 
         if self.train:
-            self.X = self.X[:int(len(self.X)*split)]
-            self.Y = self.Y[:int(len(self.Y)*split)]
+            self.X = self.X[:max]
+            self.Y = self.Y[:max]
         else:
-            self.X = self.X[int(len(self.X)*split):]
-            self.Y = self.Y[int(len(self.Y)*split):]
+            self.X = self.X[max:]
+            self.Y = self.Y[max:]
 
         
     def enumerate(self):
         self.ug_chords = clean_ug(self.rand)
         self.pop909_chords = clean_pop909(self.rand)
         self.chords = self.ug_chords + self.pop909_chords
-
+ 
         # form set and assign numbers
         all = set()
         for s in self.chords:
@@ -113,3 +114,4 @@ class WholeDataset(Dataset):
      
     def __len__(self):
         return len(self.X)
+
