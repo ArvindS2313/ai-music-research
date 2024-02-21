@@ -1,6 +1,9 @@
 import random
+import generate
+from generate import tr_gen
 
-class Structure():
+class Structure:
+
     def __init__(self, name, params):
         self.name = name
         self.params = params
@@ -24,20 +27,20 @@ class Structure():
 
         # if intro or outro - make shorter
         if self.name == "intro" or self.name == "outro":
-            if self.params["length"] == 1:
+            if self.params["song_length"] == 1:
                 len = 2
-            elif self.params["length"] == 2:
+            elif self.params["song_length"] == 2:
                 len = 3
-            elif self.params["length"] < 5:
+            elif self.params["song_length"] < 5:
                 len = 4
             else:
                 len = 5
         else:
-            if self.params["length"] == 1:
+            if self.params["song_length"] == 1:
                 len = 5
-            elif self.params["length"] == 2:
+            elif self.params["song_length"] == 2:
                 len = 7
-            elif self.params["length"] < 5:
+            elif self.params["song_length"] < 5:
                 len = 9
             else:
                 len = random.randint(10, 11)
@@ -72,7 +75,4 @@ class Structure():
         return len, num_components, num_acc
 
             
-    def generate(self):
-        ''' Generates the chord sequence using the NN. '''
-        pass
-
+    def generate(self): 

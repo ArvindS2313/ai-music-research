@@ -1,5 +1,6 @@
 import random
 from structure import Structure
+import generate
 
 '''conv different for all agents.'''
 ''' I'll form more agents as time goes on... here are three to begin with'''
@@ -17,6 +18,10 @@ class Agent():
                 , "S": "solo", "IL": "interlude"}
         structs = [Structure(name=conv[x], params=self.params) for x in self.s_structure]
         return structs
+    
+    def generate(self):
+        
+
 
 
 class ShortSimple(Agent):
@@ -103,3 +108,5 @@ class LongComplex(Agent):
         self.s_structure = random.choice(self.structures)
         self.params = params
         self.structs = self.form_structures()
+
+        

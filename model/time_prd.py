@@ -50,21 +50,20 @@ class TimePeriod(nn.Module):
         return loss
     
 
-    def generate(self, context, num_tokens):
-        assert context.dim() == 2, "Must be shape (B, T)"
-        assert self.eval, "Must be in evaluation mode"
-    
-         # only last block_size elements are allowed
-        context = context[:, -self.block_size:]
+    def generate(self, idx, num_tokens):
+        for i in range(num_tokens):
+            # if the context is larger than the block_size, crop it
+            if idx.shape[1] > self.block_size:
+                inp = idx[:, -self.block_size:]
+            else:
+                inp = idx
 
-        # duplicate if less than block_size context provided
-        context = context.repeat(0, math.ceil(self.block_size/context.shape[1]))    
-
-        for _ in range(num_tokens):
-            logits = self(context)
+            logits = self(inp)
             probs = F.softmax(logits, dim=-1)
-            pred = torch.multinomial(probs, num_samples=1)
-            context = torch.cat((context[:, 1:], pred), dim=1)
+            next = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat([idx, next], dim=-1)
+
+        return idx
 
     def get_params(self):
         """ 
