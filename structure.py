@@ -1,23 +1,36 @@
 import random
-import generate
-from generate import tr_gen
+from chord import Chord
+
+'''
+Class definition for a song structure object (e.g., verse, chorus).
+'''
 
 class Structure:
 
     def __init__(self, name, params):
         self.name = name
         self.params = params
-
         self.len, self.num_components, self.num_acc = self.gen_params()
         self.cs = self.gen_components()
-        self.generate()
 
     def __repr__(self):
         return self.name
     
     def gen_components(self):
-        comp_structure = (10 * list("ABCDEFGHIJKL")[:self.num_components])[:self.len]
+        alph = "ABCDEFGHIJKL"
+        comp_structure = (10 * list(alph)[:self.num_components])[:self.len]
         random.shuffle(comp_structure)
+
+        # randomized letters, so convert back to ABCD... notation
+        conv = {}
+        place = 0
+        for m in comp_structure:
+            if m not in conv.keys():
+                conv[m] = alph[place] 
+                place += 1
+        
+        # convert entries in comp_structure
+        comp_structure = [conv[m] for m in comp_structure]
         return comp_structure
     
     def gen_params(self):
@@ -73,6 +86,33 @@ class Structure:
         # num_components = number of different components in song
         # num_acc = number of accidentals for SAME components only
         return len, num_components, num_acc
+    
 
-            
-    def generate(self): 
+    def generate(self, chords):
+        '''
+        Takes in a set of chords (list of strings) and fills in the measure sequence 
+        based on those chords. Chords is a required parameter.
+        '''
+        assert chords is not None
+        assert len(chords) >= 4 + self.num_components
+
+        alph = "ABCDEFGHIJKL"[:self.num_components]
+        measure_structures = {}
+        # first measure is always the first four chords
+        base = chords[:4]
+        measure_structures[alph[0]] = base
+
+        # choose one chord 
+
+
+
+
+
+
+
+
+
+
+
+
+

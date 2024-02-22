@@ -71,5 +71,4 @@ def assign_agent(params):
     return agent
 
 ls = LongSimplistic(params)
-print(ls.structs)
-print(ls.structs[1].cs)
+

@@ -2,15 +2,14 @@ import random
 from structure import Structure
 import generate
 
-'''conv different for all agents.'''
-''' I'll form more agents as time goes on... here are three to begin with'''
 
-class Agent():
+class Agent:
     # boilerplate class
     def __init__(self) -> None:
         self.structures = []
         self.s_structure = []        
         self.params = {}
+        self.structs: list = []
         # The rest of the stuff depends on the agent.
     
     def form_structures(self):
@@ -20,6 +19,9 @@ class Agent():
         return structs
     
     def generate(self):
+        self.chords = generate.tr_gen("saved-models/model.pth", 
+                                      context=generate.context1, 
+                                      num_tokens=4*len(set(self.structs)))
         
 
 
