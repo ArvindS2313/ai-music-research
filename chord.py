@@ -2,7 +2,6 @@
 A class declaration for a chord object. 
 '''
 
-
 class Chord:
 
     def __init__(self, name):
@@ -61,8 +60,21 @@ class Chord:
             self._type = "aug"
         elif self._type == "aug":
             self._type = "dim"
+        elif self._type == "sus" or self._type == "sus4":
+            self._type = "sus2"
+        elif self._type == "sus2":
+            self._type = "sus4"
+        self.name = self._root + ":" + self._type
+
+    def add_rem7(self):
+        if self._type == "min" or self._type == "maj":
+            self._type += "7"
+        elif self._type == "min7":
+            self._type = "min"
+        elif self._type == "maj7":
+            self._type = "maj"
         self.name = self._root + ":" + self._type
 
     def __repr__(self):
         return self.name
-        
+    

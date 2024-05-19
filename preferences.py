@@ -24,7 +24,7 @@ parser.add_argument("-cc", "--chord-complexity", type=int,
                     "chords of the song; higher rating means more complex chords")
 parser.add_argument("-v", "--variety", type=int,
                     help="A numerical rating, on a scale from 1 to 5, describing how repeated "
-                    "the chords should be; a lower rating means chords should be fairly complex")
+                    "the chords should be; a lower rating means chords should be fairly repetitive")
 parser.add_argument("-s", "--sound", type=int, 
                     help="A numerical rating, on a scale from 1 to 5, on whether the chords should "
                     "be very consonant (sounds pleasant, 'nice' intervals) or very dissonant "
@@ -70,5 +70,10 @@ def assign_agent(params):
     
     return agent
 
-ls = LongSimplistic(params)
+ls = assign_agent(params)
+ls.generate()
 
+for s in ls.structs:
+    print(s.measure_structures)
+    print(s.chords)
+    print("\n")

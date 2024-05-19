@@ -44,7 +44,7 @@ def mlp_gen(type, kind, context, path=None, block_size=5, num_tokens=1):
     return chords
 
 context1 = ["C:maj7", "D:min", "D:maj", "G:maj", "G:maj", "E:min7", "A:min", "A:maj", "D:maj7", 
-            "B:min", "G:maj", "G:sus4", "G:sus4", "C:maj", "G:maj", "F:maj7", "C:maj", "G7", "A:min"]
+            "B:min", "G:maj", "G:sus4", "G:sus4", "C:maj", "G:maj", "F:maj7", "C:maj", "G:sus4", "A:min", "A:min"]
 context2 = ["C:maj", "E:min", "D:min", "G:maj", "D:maj", "B:min", "F#:min", "G:maj", "G:maj"]
 context3 = ["G:maj", "G:maj", "A:min", "A:maj", "E:maj", "E:min", "A:min7", "C:maj", "C:maj"]
 context4 = ["D:min", "G:min", "G:maj", "G:min", "F:maj", "F:min", "G:min", "C:maj", "C:maj"]
