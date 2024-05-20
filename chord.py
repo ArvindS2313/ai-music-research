@@ -5,7 +5,11 @@ A class declaration for a chord object.
 class Chord:
 
     def __init__(self, name):
-        # name should be in the format 'C:maj' or 'Eb:min7.'
+        ''' Precondition: name is in format 'root':'type' '''
+
+        # WARNING: assert does not check if the root and type of the chords are valid
+        assert ":" in name and name.index(":") > 0 
+
         self.name = name 
         self._root = name.split(":")[0]
         self._type = name.split(":")[1] if Chord.is_proper(name.split(":")[1]) else 'maj'
@@ -74,6 +78,9 @@ class Chord:
         elif self._type == "maj7":
             self._type = "maj"
         self.name = self._root + ":" + self._type
+
+    def accidentalize(self, direction):
+        pass
 
     def __repr__(self):
         return self.name

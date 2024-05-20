@@ -32,55 +32,59 @@ class Agent:
         # apply chord generation for each song structure 
         prev = []
         start = 0
+        stop = -1
+
         for s in range(len(self.structs)):
             struct = self.structs[s]
             print("Struct  ", struct)
-            context = self.gen_chords[start:start+4+struct.num_components]
+
+            stop = start + struct.num_components + 4   # technically one extra
+            context = self.gen_chords[start:stop]   # set of chords for this song structure
             print("Context for this structure:")
             print(context)
-            main = context[:4]             # four main chords which are the first measure
-            print("Main Context (first measure) of structure:")
-            print(main)
-            variations = context[4:]       # chords used as variations
 
-            main = self.customize(prev=prev, curr=main)    # customize main chords based on previous main chords
+            # Customize the context to make it different from the previous structure
             print("Main Context Changed:")
-            print(main)
-            context = main[:] + variations[:]
-            struct.generate(chords=context)
+            print(context[:4])
+            context = self.customize(prev=prev, curr=context)
+            print(context[:4])
 
-            prev = main[:]
-            start += 4+struct.num_components
-            print("\n\n\n")
+            struct.generate(chords=context)
+            prev = context[:]
+            start = stop
+
+            print("\n\n\n\n")
                         
 
     def customize(self, prev, curr):
-        '''
-        Customizes an array of chords to make it more unique from the previous
-        chords, if necessary.
-        '''
-        assert self.params != {}
 
-        same_chords = set([c.name for c in prev]) & set([c.name for c in curr])
-        print("Same chords from previous context:")
-        print(same_chords)
-        if len(same_chords) == 2:
-            # two similar chords, modify ending
-            for c in range(len(curr)):
-                chord = curr[c]
-                if self.params['accidentals'] >= 3:
-                    chord.change_maj_min()
-                else:
-                    chord.add_rem7()
+        if not bool(prev): 
+            return curr
+        
+        # main set of 4 chords
+        main_prev = prev[:4]
+        main_curr = curr[:4]
 
-        elif len(same_chords) > 2:
-            # 3 or 4 similar chords, perform a transposition
-            for c in range(len(curr)):
-                chord = curr[c]
-                key = self.params['modulation'][0] if self.params['modulation'] else 'D'
-                chord.transpose(key)
+        shared_ind = set()
+        # double for loop check, not proud
+        for i in range(len(main_curr)):
+            for j in range(len(main_prev)):
+                if main_curr[i].name == main_prev[j].name:
+                    shared_ind.add(i)
 
+        if len(shared_ind) <= 1:
+            # 1 or 0 chords that are shared, do nothing
+            return curr
+        
+        if self.params['chord_complexity'] <= 2:
+            for ind in shared_ind:
+                curr[ind].add_rem7()
+        else:
+            for ind in shared_ind:
+                curr[ind].change_maj_min()
+        
         return curr
+    
 
 
 class ShortSimple(Agent):
