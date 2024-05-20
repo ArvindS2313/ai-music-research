@@ -1,5 +1,6 @@
 from agents import * 
 import argparse
+import output
 
 print("\n------------- PREFERENCES -------------")
 print("AI will try its best to adhere to preferences, but it may not.")
@@ -73,7 +74,9 @@ def assign_agent(params):
 ls = assign_agent(params)
 ls.generate()
 
+full_chords = []
 for s in ls.structs:
-    print(s.measure_structures)
-    print(s.chords)
-    print("\n")
+    full_chords.extend(s.chords)
+
+print(full_chords)
+output.output(full_chords)
