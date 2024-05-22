@@ -10,13 +10,16 @@ class Agent:
         self.structs_str: list = []     # Strings 
         self.structs: list = []         # Structure class
         self.params = {}
-        # The rest of the stuff depends on the agent.
-    
-    def form_structures(self):
-        conv = {"I": "intro", "V":"verse", "C": "chorus", "O":"outro", "B":"bridge"
-                , "S": "solo", "IL": "interlude"}
-        self.structs = [Structure(name=conv[x], params=self.params) for x in self.structs_str]
-    
+
+        self.conv = {"I": "intro", "V":"verse", "C": "chorus", "O":"outro", 
+                     "B":"bridge", "S": "solo", "IL": "interlude"}
+        self.structs_str = [self.conv[x] for x in self.structs_str]
+        self.structs = []
+        
+        # Construct an empty structs dict which will store the chords for each struct
+        self.structs_dict = {}
+        
+
     def generate(self):
         assert self.params != {}
 
@@ -24,36 +27,38 @@ class Agent:
                                        num_tokens=500, type="time", kind="00")
         self.gen_chords = [Chord(c) for c in self.gen_chords[len(generate.context1):]]  # convert to Chord objects; don't feed input chords
         
-        print(self.gen_chords)
-        print()
-        print()
-        print()
 
         # apply chord generation for each song structure 
         prev = []
         start = 0
         stop = -1
 
-        for s in range(len(self.structs)):
-            struct = self.structs[s]
-            print("Struct  ", struct)
+        print("Proposed Structure: ", self.structs_str)
+        print("\n")
 
-            stop = start + struct.num_components + 4   # technically one extra
-            context = self.gen_chords[start:stop]   # set of chords for this song structure
-            print("Context for this structure:")
-            print(context)
+        for s in range(len(self.structs_str)):
+            if self.structs_str[s] not in self.structs_dict.keys():
+                struct = Structure(self.structs_str[s], self.params)
+                print(self.conv[struct.name])
 
-            # Customize the context to make it different from the previous structure
-            print("Main Context Changed:")
-            print(context[:4])
-            context = self.customize(prev=prev, curr=context)
-            print(context[:4])
+                stop = start + struct.num_components + 4   # technically one extra
+                context = self.gen_chords[start:stop]   # set of chords for this song structure
 
-            struct.generate(chords=context)
-            prev = context[:]
-            start = stop
+                # Customize the context to make it different from the previous structure
+                context = self.customize(prev=prev, curr=context)
 
-            print("\n\n\n\n")
+                struct.generate(chords=context)
+                prev = context[:]
+                start = stop
+
+                self.structs_dict[self.structs_str[s]] = struct
+
+                print("Measure Structure:  ", struct.comp_structure)
+                print(struct.measure_structures)
+                print()
+
+
+            self.structs[s] = self.structs_dict[self.structs_str[s]]
                         
 
     def customize(self, prev, curr):
@@ -86,7 +91,6 @@ class Agent:
         return curr
     
 
-
 class ShortSimple(Agent):
     ''' Short length, simple structures, no changes'''
     def __init__(self, params) -> None:
@@ -96,8 +100,8 @@ class ShortSimple(Agent):
             ["I", "V", "C", "V", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
 
 
 class ShortComplex(Agent):
@@ -111,8 +115,8 @@ class ShortComplex(Agent):
             ["I", "V", "C", "V", "B", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
 
 
 class MediumSimplistic(Agent):
@@ -126,8 +130,8 @@ class MediumSimplistic(Agent):
             ["I", "V", "C", "V", "B", "V", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
 
 
 class MediumComplex(Agent):
@@ -141,8 +145,8 @@ class MediumComplex(Agent):
             ["I", "V", "C", "B", "V", "S", "C", "V", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
 
 
 class LongSimplistic(Agent):
@@ -155,8 +159,8 @@ class LongSimplistic(Agent):
             ["I", "V", "V", "C", "V", "B", "V", "C", "S", "C", "O"]
         ]
         self.structs_str = random.choice(self.poss_structs)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
 
 
 class LongComplex(Agent):
@@ -169,5 +173,7 @@ class LongComplex(Agent):
             ["I", "V", "V", "C", "B", "V", "C", "S", "C", "IL", "C", "O"]
         ]
         self.structs_str = random.choice(self.structures)
+        self.structs = [None for x in self.structs_str]
         self.params = params
-        self.form_structures()
+
+

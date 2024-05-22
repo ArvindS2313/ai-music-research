@@ -46,7 +46,7 @@ def output(chords: list):
         
         counter += 1
 
-    with open(f"sample-song-1.mid", "wb") as f:
+    with open(f"song-3", "wb") as f:
         MyMIDI.writeFile(f)
         print("File has been outputted.")
 

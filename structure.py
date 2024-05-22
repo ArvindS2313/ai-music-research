@@ -12,6 +12,7 @@ class Structure:
     def __init__(self, name, params):
         self.name = name
         self.params = params
+        self.chords = []
         self.gen_params()
         self.gen_components()
 
@@ -29,7 +30,7 @@ class Structure:
         # decide on measure length
 
         # if intro or outro - make shorter
-        if self.name == "intro" or self.name == "outro":
+        if self.name == "I" or self.name == "O":
             if self.params["song_length"] <= 3:
                 len = 2
             else:
@@ -45,6 +46,7 @@ class Structure:
                 len = 8
             else:
                 len = 12
+
         
         # decide on number of unique components (variety)
         if self.params["variety"] == 1:
@@ -124,11 +126,6 @@ class Structure:
                         prev.append(ch)
                 self.measure_structures[comp] = prev
 
-        # self.chords represents the list of chords for song structure, in proper order
-        self.chords = []
-
-        print(self.measure_structures)
-        print("\n\n")
         for c in self.comp_structure:
             self.chords.extend(self.measure_structures[c])
 
