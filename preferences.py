@@ -76,7 +76,7 @@ ls.generate()
 
 full_chords = []
 for s in ls.structs:
-    full_chords.extend(s.chords)
+    full_chords.extend(s.all_chords)
 
 print(full_chords)
 output.output(full_chords)

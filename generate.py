@@ -1,7 +1,6 @@
 import torch 
-from  data.whole_dataset import WholeDataset
+from data.whole_dataset import WholeDataset
 from data.time_period_dataset import TimePeriodDataset
-import os
 
 ''' 
 Generation function for all types of music models -- Whole Dataset Transformers and the Genre/Time 

@@ -2,23 +2,19 @@ import random
 from structure import Structure
 from chord import Chord
 import generate
-from pprint import pprint
 
 class Agent:
     # boilerplate class
-    def __init__(self) -> None:
-        self.structs_str: list = []     # Strings 
-        self.structs: list = []         # Structure class
-        self.params = {}
-
+    def __init__(self, params) -> None:
+        self.params = params
         self.conv = {"I": "intro", "V":"verse", "C": "chorus", "O":"outro", 
                      "B":"bridge", "S": "solo", "IL": "interlude"}
-        self.structs_str = [self.conv[x] for x in self.structs_str]
+
+        # Define parameters which will hold the song structures
         self.structs = []
-        
-        # Construct an empty structs dict which will store the chords for each struct
-        self.structs_dict = {}
-        
+        self.structs_str = []
+        self.structs_dict = {}        
+
 
     def generate(self):
         assert self.params != {}
@@ -27,19 +23,15 @@ class Agent:
                                        num_tokens=500, type="time", kind="00")
         self.gen_chords = [Chord(c) for c in self.gen_chords[len(generate.context1):]]  # convert to Chord objects; don't feed input chords
         
-
         # apply chord generation for each song structure 
         prev = []
         start = 0
         stop = -1
 
-        print("Proposed Structure: ", self.structs_str)
-        print("\n")
-
+        self.structs = [None for _ in range(len(self.structs_str))]
         for s in range(len(self.structs_str)):
             if self.structs_str[s] not in self.structs_dict.keys():
                 struct = Structure(self.structs_str[s], self.params)
-                print(self.conv[struct.name])
 
                 stop = start + struct.num_components + 4   # technically one extra
                 context = self.gen_chords[start:stop]   # set of chords for this song structure
@@ -53,16 +45,10 @@ class Agent:
 
                 self.structs_dict[self.structs_str[s]] = struct
 
-                print("Measure Structure:  ", struct.comp_structure)
-                print(struct.measure_structures)
-                print()
-
-
             self.structs[s] = self.structs_dict[self.structs_str[s]]
                         
 
     def customize(self, prev, curr):
-
         if not bool(prev): 
             return curr
         
@@ -94,20 +80,18 @@ class Agent:
 class ShortSimple(Agent):
     ''' Short length, simple structures, no changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "O"],
             ["I", "V", "C", "V", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 
 class ShortComplex(Agent):
     ''' Short length, more complex structures, no changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "O"],
             ["I", "V", "V", "C", "B", "C", "O"],
@@ -115,14 +99,12 @@ class ShortComplex(Agent):
             ["I", "V", "C", "V", "B", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 
 class MediumSimplistic(Agent):
     '''Medium length, simple structures, few changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "V", "C", "O"],
             ["I", "V", "V", "C", "B", "V", "V" "C", "O"],
@@ -130,14 +112,12 @@ class MediumSimplistic(Agent):
             ["I", "V", "C", "V", "B", "V", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 
 class MediumComplex(Agent):
     '''Medium length, complex structures, some changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "B", "V", "C", "S", "C", "O"],
             ["I", "V", "C", "IL", "V", "C", "S", "C", "O"],
@@ -145,35 +125,29 @@ class MediumComplex(Agent):
             ["I", "V", "C", "B", "V", "S", "C", "V", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 
 class LongSimplistic(Agent):
     '''Long length, somewhat simplistic structures, some changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "B", "V", "C", "V", "C", "O"],
             ["I", "V", "C", "B", "V", "C", "V", "S", "V", "C", "O"],
             ["I", "V", "V", "C", "V", "B", "V", "C", "S", "C", "O"]
         ]
         self.structs_str = random.choice(self.poss_structs)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 
 class LongComplex(Agent):
     ''' Long length, complex structures, multiple changes'''
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__(params)
         self.structures = [
             ["I", "V", "C", "V", "B", "S", "V", "C", "IL", "V", "C", "O"],
             ["I", "V", "C", "V", "C", "S", "V", "B", "V", "S", "C", "O"],
             ["I", "V", "V", "C", "B", "V", "C", "S", "C", "IL", "C", "O"]
         ]
         self.structs_str = random.choice(self.structures)
-        self.structs = [None for x in self.structs_str]
-        self.params = params
 
 

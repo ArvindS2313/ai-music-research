@@ -10,9 +10,18 @@ Class definition for a song structure object (e.g., verse, chorus).
 class Structure:
 
     def __init__(self, name, params):
+        '''
+        Initializes a measure structure object with a name and parameters
+        Generates measure structure
+        '''
         self.name = name
         self.params = params
-        self.chords = []
+        self.all_chords = []    # entire list of chords
+        self.ms = []     # outlined 
+        self.ms_chords = {}            # 
+
+
+
         self.gen_params()
         self.gen_components()
 
@@ -28,7 +37,6 @@ class Structure:
         '''
 
         # decide on measure length
-
         # if intro or outro - make shorter
         if self.name == "I" or self.name == "O":
             if self.params["song_length"] <= 3:
@@ -75,35 +83,35 @@ class Structure:
 
     def gen_components(self):
         alph = "ABCDEFGHIJKL"
-        self.comp_structure = (10 * list(alph)[:self.num_components])[:self.len]
-        random.shuffle(self.comp_structure)
+        self.ms = (10 * list(alph)[:self.num_components])[:self.len]
+        random.shuffle(self.ms)
 
         # randomized letters, so convert back to ABCD... notation
         conv = {}
         place = 0
-        for m in self.comp_structure:
+        for m in self.ms:
             if m not in conv.keys():
                 conv[m] = alph[place] 
                 place += 1
         
         # convert entries in comp_structure
-        self.comp_structure = [conv[m] for m in self.comp_structure]
+        self.ms = [conv[m] for m in self.ms]
 
 
     def generate(self, chords):
         '''
-        Takes in a set of chords (list of strings) and fills in the measure sequence 
-        based on those chords. Chords is a required parameter.
+        Takes in a set of chords (list of strings) and fills in ms_chords  
+        and chords based on those chords. Chords is a required parameter.
         '''
         assert chords is not None
         assert len(chords) >= 4 + self.num_components
 
         alph = "ABCDEFGHIJKL"[:self.num_components]
-        self.measure_structures = {}
+        self.ms_chords = {}
 
         # first measure is always the first four chords
         base = chords[:4]
-        self.measure_structures[alph[0]] = base
+        self.ms_chords[alph[0]] = base
 
         # choose one position to be changing position, emphasis on last one
         pos_change = 3 if random.random() > 0.3 else random.randint(0, 2)
@@ -112,22 +120,22 @@ class Structure:
         for i in range(1, self.num_components):
             additive = chords[:4]
             additive[pos_change] = chords[i-1+4]
-            self.measure_structures[alph[i]] = additive
+            self.ms_chords[alph[i]] = additive
 
         # remove duplicates if variety rating is 4 or 5
         if self.params['variety'] >= 4:
-            for comp in self.measure_structures.keys():
+            for comp in self.ms_chords.keys():
                 prev = []
                 prev_names = []
-                for ch in self.measure_structures[comp]:
+                for ch in self.ms_chords[comp]:
                     if ch.name not in prev_names:
                         # not a duplicate 
                         prev_names.append(ch.name)
                         prev.append(ch)
-                self.measure_structures[comp] = prev
+                self.ms_chords[comp] = prev
 
-        for c in self.comp_structure:
-            self.chords.extend(self.measure_structures[c])
+        for c in self.ms:
+            self.all_chords.extend(self.ms_chords[c])
 
 
 
