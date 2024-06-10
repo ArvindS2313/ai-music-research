@@ -1,6 +1,7 @@
 '''
 A class declaration for a chord object. 
 '''
+import random
 
 class Chord:
     
@@ -85,6 +86,19 @@ class Chord:
 
     def accidentalize(self, direction):
         pass
+
+    def add_rem_sus(self):
+        self._type = '' if 'sus' in self._type else 'sus4' if random.random() > 0.5 else 'sus2'
+
+    def randomize(self):
+        outcome = random.random()
+        if outcome < 0.25:
+            self.add_rem_sus()
+        elif outcome < 0.60:
+            self.add_rem7()
+        elif outcome < 0.8:
+            self.transpose("G") if random.random() < 0.5 else self.transpose("F")
+
 
     def __repr__(self):
         return self.name

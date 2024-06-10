@@ -19,10 +19,14 @@ class Agent:
     def generate(self):
         assert self.params != {}
 
-        self.gen_chords = generate.mlp_gen(context=generate.context2, block_size=len(generate.context2),
+        self.chords = generate.mlp_gen(context=generate.context2, block_size=len(generate.context2),
                                        num_tokens=500, type="time", kind="00")
-        self.gen_chords = [Chord(c) for c in self.gen_chords[len(generate.context1):]]  # convert to Chord objects; don't feed input chords
-        
+        self.more_chords = generate.mlp_gen(context=self.chords[400:], block_size=len(self.chords[400:]),
+                                       num_tokens=500, type="time", kind="00")
+        self.gen_chords = [Chord(c) for c in self.chords[len(generate.context2):]]  # convert to Chord objects; don't feed input chords
+        self.more_chords = [Chord(c) for c in self.chords[len(self.chords[400:]):]]
+
+
         # apply chord generation for each song structure 
         prev = []
         start = 0
@@ -32,7 +36,7 @@ class Agent:
         for s in range(len(self.structs_str)):
             if self.structs_str[s] not in self.structs_dict.keys():
                 struct = Structure(self.structs_str[s], self.params)
-
+                
                 stop = start + struct.num_components + 4   # technically one extra
                 context = self.gen_chords[start:stop]   # set of chords for this song structure
 
@@ -45,7 +49,27 @@ class Agent:
 
                 self.structs_dict[self.structs_str[s]] = struct
 
+                print(struct)
+                print(struct.ms)
+                print(struct.ms_chords)
+                print(struct.all_chords)
+                print("\n\n")
+
             self.structs[s] = self.structs_dict[self.structs_str[s]]
+
+        print("\n\nApply variation algorithm")
+        start = 0
+        for s in self.structs_dict.keys():
+            start = self.structs_dict[s].vary_chords(self.more_chords, start)
+            
+        for s in self.structs_dict.keys():
+            struct = self.structs_dict[s]
+            print(struct)
+            print(struct.ms)
+            print(struct.ms_chords)
+            print(struct.all_chords)
+            print("\n\n")
+
                         
 
     def customize(self, prev, curr):

@@ -17,10 +17,8 @@ class Structure:
         self.name = name
         self.params = params
         self.all_chords = []    # entire list of chords
-        self.ms = []     # outlined 
-        self.ms_chords = {}            # 
-
-
+        self.ms = []            # outlined measure structures (list: strings)
+        self.ms_chords = {}     # measure chords (dict: chord obj)
 
         self.gen_params()
         self.gen_components()
@@ -82,6 +80,10 @@ class Structure:
         self.len, self.num_components, self.num_acc = len, num_components, num_acc
 
     def gen_components(self):
+        '''
+        Fills in outlined measure structures (ms)
+        '''
+
         alph = "ABCDEFGHIJKL"
         self.ms = (10 * list(alph)[:self.num_components])[:self.len]
         random.shuffle(self.ms)
@@ -122,6 +124,12 @@ class Structure:
             additive[pos_change] = chords[i-1+4]
             self.ms_chords[alph[i]] = additive
 
+        # Perform necessary changes to allign with user preferences
+        # self.rem_duplicate_measures()
+        self.update()
+    
+
+    def rem_duplicate_measures(self):
         # remove duplicates if variety rating is 4 or 5
         if self.params['variety'] >= 4:
             for comp in self.ms_chords.keys():
@@ -134,6 +142,46 @@ class Structure:
                         prev.append(ch)
                 self.ms_chords[comp] = prev
 
+
+    def vary_chords(self, extra_chords, start):
+        '''
+        Varies the chords in each measure structure if necessary to ensure 
+        variety rating is met
+        '''
+        counter = start
+        print("varying chords for ", self)
+        if self.params['variety'] >= 4:
+            # Option 1 is choosing completely different chords, option 2 is modifying the
+            # exsisting chords, and option 3 is changing the length duration of the chords
+            opt = 1 if random.random() < 1/2 else 2 # if random.random() < 0.5 else 3
+            print("opt is ", opt)
+
+            # opt 3 is harder to handle, welp
+            prev_ch = []    # Strings
+            for c in "ABCDEFGHIJKL"[:len(self.ms_chords)]:
+                print("Checking ", self.ms_chords[c])
+                print("Prev_ch as of now: ", prev_ch)
+
+                if [ch.name for ch in self.ms_chords[c]] not in prev_ch:
+                    prev_ch.append([ch.name for ch in self.ms_chords[c]])
+                    print(self.ms_chords[c], " added to prev_ch")
+                    
+                elif opt == 1:
+                    print(self.ms_chords[c], " was already found in prev_ch, applying option 1")
+                    for ch in self.ms_chords[c]:
+                        ch.randomize()
+                    print("Chords have now become: ", self.ms_chords[c])
+                elif opt == 2:
+                    print(self.ms_chords[c], "  was already found in prev_ch, applying option 2")
+                    self.ms_chords[c] = [extra_chords[i] for i in range(counter, counter+len(self.ms_chords[c]))]
+                    # extra_chords = extra_chords[range(len(self.ms_chords[c])):]
+                    counter += len(self.ms_chords[c])
+                print()
+        print()
+        print()
+        return counter
+
+    def update(self):
         for c in self.ms:
             self.all_chords.extend(self.ms_chords[c])
 
