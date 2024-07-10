@@ -1,10 +1,12 @@
-'''
-A class declaration for a chord object. 
-'''
 import random
+from note import Note
+from pychord import * 
 
 class Chord:
-    
+    '''
+    A class declaration for a chord object. 
+    '''
+
     NOTES = {"B#": 0, "C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3,
          "E": 4, "Fb": 4, "E#": 5, "F": 5, "F#": 6, "Gb": 6, "G": 7,
          "G#": 8, "Ab": 8, "A": 9, "A#": 10, "Bb": 10, "B": 11, "Cb": 11}
@@ -16,6 +18,7 @@ class Chord:
         assert ":" in name and name.index(":") > 0 
 
         self.name = name 
+        self.notes = [Note(ch) for ch in Chord(self.name.replace(":", "")).components()]
         self._root = name.split(":")[0]
         self._type = name.split(":")[1] if Chord.is_proper(name.split(":")[1]) else 'maj'
 
@@ -84,11 +87,13 @@ class Chord:
             self._type = "maj"
         self.name = self._root + ":" + self._type
 
-    def accidentalize(self, direction):
-        pass
-
     def add_rem_sus(self):
         self._type = '' if 'sus' in self._type else 'sus4' if random.random() > 0.5 else 'sus2'
+        self.name = self._root + ":" + self._type
+
+    def simplify_end(self):
+        self._type = "min" if "min" in self._type else "maj"
+        self.name = self._root + ":" + self._type
 
     def randomize(self):
         outcome = random.random()
@@ -98,8 +103,13 @@ class Chord:
             self.add_rem7()
         elif outcome < 0.8:
             self.transpose("G") if random.random() < 0.5 else self.transpose("F")
+        self.name = self._root + ":" + self._type
 
+    def get_type(self):
+        return self._type
+    
+    def get_root(self):
+        return self._root
 
     def __repr__(self):
         return self.name
-    

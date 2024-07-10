@@ -66,7 +66,9 @@ class Train:
             layernorm_eps = self.hparams['layernorm_eps']
         )
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=hparams['learning_rate'])
-        print("num parameters", self.model.get_params())        
+        print("num parameters", self.model.get_params())  
+        print("training size ", len(self.train_data))    
+        print("validation size ", len(self.val_data))  
 
         # set up times
         self.start = None
@@ -207,11 +209,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     hparams = vars(args)
 
-    trainer = Train(hparams, bool(hparams['num_epochs']), False)
+    trainer = Train(hparams, epoch_tr=False, rand=True)
     trainer.run()
     print(len(trainer.train_data))
 
     os.chdir(f'{os.path.dirname(__file__)}')
-    save_path = f"saved-models/model{'-rand' if hparams['randomize_data'] else ''}.pth"
+    save_path = f"saved-models/model-rand-ug.pth"
     torch.save(trainer.model, save_path)
     
+#  python train.py -ep 3  -iters 4000 -ei 300 -eval 100 -di 20 -d 'cpu' -batch 50 -ne 64 -nh 8 -n-lay 8 -block 20  -bias True -eps 1e-5 -drop 0.1 -h-dim 128 -lr 1e-3 --betas 'None' -rand True

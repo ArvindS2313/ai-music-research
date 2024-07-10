@@ -1,4 +1,6 @@
 import torch 
+import os 
+import sys
 from data.whole_dataset import WholeDataset
 from data.time_period_dataset import TimePeriodDataset
 
@@ -10,14 +12,14 @@ Supports two different types of generation processes: fixed tokens or regressive
     - Regressive generation will generate chord sequences until the stop (<EOS>) token.
 '''
 
+
 def tr_gen(path, context: list , block_size=20, num_tokens=1):
+    itoc = WholeDataset(rand=True).itoc
+    ctoi = WholeDataset(rand=True).ctoi
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     assert len(context) == block_size
     model = torch.load(path)
     model.eval()
-
-    # get itoc and ctoi 
-    itoc = WholeDataset().itoc
-    ctoi = WholeDataset().ctoi
 
     idx = torch.tensor([[ctoi[c] for c in context]]) # batch_size = 1
     chords = model.generate(idx=idx, num_tokens=num_tokens)
@@ -44,7 +46,7 @@ def mlp_gen(type, kind, context, path=None, block_size=5, num_tokens=1):
 
 context1 = ["C:maj7", "D:min", "D:maj", "G:maj", "G:maj", "E:min7", "A:min", "A:maj", "D:maj7", 
             "B:min", "G:maj", "G:sus4", "G:sus4", "C:maj", "G:maj", "F:maj7", "C:maj", "G:sus4", "A:min", "A:min"]
-context2 = ["C:maj", "E:min", "D:min", "G:maj", "D:maj", "B:min", "F#:min", "G:maj", "G:maj"]
+context2 = ["C:maj", "E:min", "D:min", "G:maj", "D:maj", "B:min", "F#:min", "E:min", "G:maj", "G:maj"]
 context3 = ["G:maj", "G:maj", "A:min", "A:maj", "E:maj", "E:min", "A:min7", "C:maj", "C:maj"]
 context4 = ["D:min", "G:min", "G:maj", "G:min", "F:maj", "F:min", "G:min", "C:maj", "C:maj"]
 context5 = ["C:maj", "E:min", "D:min", "C:maj", "G:maj"]
@@ -55,4 +57,3 @@ context6 = ["C:maj", "A:min", "G:maj", "G:maj", "B:min"]
 # with open("70s-chords.txt", "a") as f:
 #     f.write('    '.join(chords))
 #     f.write('\n')
-

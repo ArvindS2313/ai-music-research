@@ -1,14 +1,14 @@
 import random
+from chord import *
 import generate
-
-'''
-Class definition for a song structure object (e.g., verse, chorus).
-'''
 
 # TODO: Clean up code 
 # TODO: Allow for accidental modification 
 
 class Structure:
+    '''
+    Class definition for a song structure object (e.g., verse, chorus).
+    '''
 
     def __init__(self, name, params):
         '''
@@ -17,10 +17,17 @@ class Structure:
         '''
         self.name = name
         self.params = params
-        self.all_chords = []    # entire list of chords
-        self.ms = []            # outlined measure structures (list: strings)
-        self.ms_chords = {}     # measure chords (dict: chord obj)
-
+        self.order = []     # measure order
+        self.ms = {}    # measure structure dictionary (outlines each measure)
+        
+        # generate rhythm level 
+        if self.params['rhythm_complexity'] == 1: 
+            self.rhythm_level = random.choices([1, 2], weights=[0.7, 0.3], k=1)[0]
+        elif self.params['rhythm_complexity'] == 2:
+            self.rhythm_level = random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2], k=1)[0]
+        else:
+            self.rhythm_level = random.choices([4, 5], weights=[0.8, 0.2])[0]
+                
         self.gen_params()
         self.gen_components()
 
@@ -31,80 +38,63 @@ class Structure:
         ''' 
         Determines three properties of the song: its length (number of measures), 
         number of unique components, and number of accidentals between repeated components.
-
         Postcondition: num_components <= len; num_acc <= num_repeats
         '''
 
-        # decide on measure length
+        # decide on number of measures
         # if intro or outro - make shorter
         if self.name == "I" or self.name == "O":
             if self.params["song_length"] <= 3:
-                len = 2
+                self.len = 2
             else:
-                len = 4
+                self.len = 4
 
         # nornal song structure length if not intro or outro
         else:
             if self.params["song_length"] == 1:
-                len = 4
+                self.len = 4
             elif self.params["song_length"] == 2:
-                len = 6
+                self.len = 6
             elif self.params["song_length"] <= 4:
-                len = 8
+                self.len = 8
             else:
-                len = 12
+                self.len = 12
 
-        
-        # decide on number of unique components (variety)
-        if self.params["variety"] == 1:
-            num_components = 1
-        elif self.params["variety"] == 2:
-            num_components = int(0.5 * len)
-        elif self.params["variety"] == 3:
-            num_components = 2 if len <= 2 else int(0.67 * len)
-        elif self.params["variety"] == 4:
-            num_components = 2 if len <= 2 else int(0.75 * len)
-        else:
-            num_components = len
-        
-        # decide on accidentals
-        num_repeats = len - num_components
-        if self.params["accidentals"] == 1:
-            num_acc = min(num_repeats, 1)
-        elif self.params["accidentals"] < 4:
-            num_acc = min(num_repeats, 3)
-        elif self.params["accidentals"] == 4:
-            num_acc = min(num_repeats, 4)
-        else:
-            num_acc = min(num_repeats, random.randint(5,6))
-
-        self.len, self.num_components, self.num_acc = len, num_components, num_acc
+        # decide on number of unique measures (measure_complexity)
+        if self.params["measure_complexity"] == 1:
+            self.unique_measures = {'full':1, 'slight':0}
+        elif self.params["measure_complexity"] == 2:
+            self.unique_measures = {'full':2, 'slight':0}
+        elif self.params["measure_complexity"] == 3:
+            self.unique_measures = {'full':2, 'slight':1}
+        elif self.params["measure_complexity"] == 4:
+            self.unique_measures = {'full':3, 'slight':0}
+        elif self.params["measure_complexity"] == 5:
+            self.unique_measures = {'full':3, 'slight':1}
 
 
     def gen_components(self):
         '''
-        Fills in outlined measure structures (ms)
+        Fills in the keys of the measure structure dictionary; sets the values to None
+        Later, the value will be a dictionary containing the chords and rhythm
         '''
 
-        alph = "ABCDEFGHIJKL"
-        self.ms = (10 * list(alph)[:self.num_components])[:self.len]
-        random.shuffle(self.ms)
+        alph = "ABCD"[:self.unique_measures['full']+self.unique_measures['slight']]
+        self.order = list((100*alph)[:self.len])
 
-        # randomized letters, so convert back to ABCD... notation
-        conv = {}
-        place = 0
-        for m in self.ms:
-            if m not in conv.keys():
-                conv[m] = alph[place] 
-                place += 1
-        
-        # convert entries in comp_structure
-        self.ms = [conv[m] for m in self.ms]
+        if self.unique_measures['slight']:
+            to_rep = alph[-1]
+            rep_with = random.choice(alph[:-1]) + "'"
+            self.order = [a if a != to_rep else rep_with for a in self.order]
 
-    
-    def generate_rhythm(self, ts):
+        self.ms = {s:None for s in self.order}
+
+
+    # long method lol
+    @staticmethod
+    def generate_rhythm(ts, level):
         if ts != "4/4": return None # only handling 4/4 for now
-        if self.params['song_complexity'] == 1:
+        if level == 1:
             choices = [
                 [4], 
                 [1, 1, 1, 1], 
@@ -118,7 +108,7 @@ class Structure:
                 elif random.random() < 0.5:
                     c = [1, 1, 2]
 
-        elif self.params['song_complexity'] == 2:
+        elif level == 2:
             path = random.random()
             if path < 0.75:
                 # generation from scratch using 1s and 2 1/2s 
@@ -140,7 +130,7 @@ class Structure:
             else: 
                 c = [3, 1/2, 1/2] if random.random() < 0.5 else [1/2, 1/2, 3]
         
-        elif self.params['song_complexity'] <= 4:
+        elif level <= 4:
             c = []
             beat_sum = 0 
             while beat_sum != 4:
@@ -154,131 +144,98 @@ class Structure:
                     elif r < 2/3: c.extend([1]); beat_sum += 1
                     else: c.extend([1/2, 1/2]); beat_sum += 1
 
-            if 2 in c and self.params['song_complexity'] == 4:
-                # replacement of 2 with 0.5 1 0.5
-                for b in range(len(c)):
-                    if c[b] == 2 and random.random() < 1/2:
-                        c[b:b+1] = [0.5, 1, 0.5]
-
-            elif 2 in c: 
-                for b in range(len(c)):
-                    if c[b] == 2 and random.random() < 1/2:
-                        c[b:b+1] = [1.5, 0.5]
+            for b in range(len(c)):
+                if c[b] == 2:
+                    choices = [[c[b]], [0.5, 1, 0.5], [1.5, 0.5]]
+                    if level == 3:
+                        weights = [1/3, 0, 2/3]
+                    elif level == 4:
+                        weights = [1/5, 1/2, 3/10]
+                    new = random.choices(choices, weights=weights, k=1)[0]
+                    c[b:b+1] = new
             
-            
-        
         else:
-            if random.random() < 0.8:
-                c = []
-                beat_sum = 0 
-                while beat_sum != 4:
-                    choice = [5]    # illogical to begin
-                    while beat_sum + sum(choice) < 4:
-                        r = random.random()
-                        if r < 1/5: choice = [1/2]
-                        elif r < 1/2: choice = [1/2, 1/2]
-                        elif r < 3/4: choice = [1]
-                        elif r < 4/5: choice = [2]
-                    c.extend(choice)
-            else:   
-                c = [3, 1] if random.random() < 1/3 else [3, 1/2, 1/2] if \
-                    random.random() < 0.5 else [1/2, 1/2, 3]
+            c = []
+            beat_sum = 0 
 
-        return c
+            choices = [1/2, 3/2, 1, 2, 3]
+            weights = [0.3, 0.25, 0.20, 0.13, 0.12]
+            while beat_sum < 4:
+                new = random.choices(choices, weights=weights, k=1)[0]
+                while beat_sum + new > 4:
+                    new = random.choices(choices, weights=weights, k=1)[0]
+                beat_sum += new
+                c.append(new)
             
-
-    def generate(self, type):
-        pass
-
-
-
-    # def generate(self, chords):
-    #     '''
-    #     Takes in a set of chords (list of strings) and fills in ms_chords  
-    #     and chords based on those chords. Chords is a required parameter.
-    #     '''
-    #     assert chords is not None
-    #     assert len(chords) >= 4 + self.num_components
-
-    #     alph = "ABCDEFGHIJKL"[:self.num_components]
-    #     self.ms_chords = {}
-
-    #     # first measure is always the first four chords
-    #     base = chords[:4]
-    #     self.ms_chords[alph[0]] = base
-
-    #     # choose one position to be changing position, emphasis on last one
-    #     pos_change = 3 if random.random() > 0.3 else random.randint(0, 2)
-
-    #     # fill the rest of the components in 
-    #     for i in range(1, self.num_components):
-    #         additive = chords[:4]
-    #         additive[pos_change] = chords[i-1+4]
-    #         self.ms_chords[alph[i]] = additive
-
-    #     # Perform necessary changes to allign with user preferences
-    #     # self.rem_duplicate_measures()
-    #     self.update()
+        return c
     
 
-    # def rem_duplicate_measures(self):
-    #     # remove duplicates if variety rating is 4 or 5
-    #     if self.params['variety'] >= 4:
-    #         for comp in self.ms_chords.keys():
-    #             prev = []
-    #             prev_names = []
-    #             for ch in self.ms_chords[comp]:
-    #                 if ch.name not in prev_names:
-    #                     # not a duplicate 
-    #                     prev_names.append(ch.name)
-    #                     prev.append(ch)
-    #             self.ms_chords[comp] = prev
+    def clean_chords(self):
+        '''
+        Adjusts endings of the chords depending on the chord_complexity rating
+        '''
+        if self.params['chord_complexity'] <= 2:
+            # fully major minor 
+            percent_maj_min = 1
+        elif self.params['chord_complexity'] == 3:
+            percent_maj_min = 0.9 
+        elif self.params['chord_complexity'] == 4:
+            percent_maj_min = 0.8
+        else:
+            percent_maj_min = 0.7
+        
+        for m in self.ms.keys():
+            maj_min, non_maj_min = [], []
+            for ch in range(len(self.ms[m]['chords'])):
+                if self.ms[m]['chords'][ch].get_type() in ['maj', 'min']:
+                    maj_min.append(ch)
+                else:
+                    non_maj_min.append(ch)
+                
+            # simplify/complexify chords if necessary 
+            while int(percent_maj_min*len(self.ms[m]['chords'])) != len(maj_min):
+                # make more simpler i.e., remove from non_maj_min to maj_min
+                if int(percent_maj_min*len(self.ms[m]['chords'])) > len(maj_min):
+                    # move from non_maj_min to maj_min
+                    remove = random.choice(non_maj_min)
+                    self.ms[m]['chords'][remove].simplify_end()
+                    maj_min.append(remove)
+                    non_maj_min.remove(remove)
+                else:
+                    # move from maj_min to non_maj_min
+                    remove = random.choice(maj_min)
+                    self.ms[m]['chords'][remove].randomize()
+                    maj_min.remove(remove)
+                    non_maj_min.append(remove)
 
 
-    # def vary_chords(self, extra_chords, start):
-    #     '''
-    #     Varies the chords in each measure structure if necessary to ensure 
-    #     variety rating is met
-    #     '''
-    #     counter = start
-    #     print("varying chords for ", self)
-    #     if self.params['variety'] >= 4:
-    #         # Option 1 is choosing completely different chords, option 2 is modifying the
-    #         # exsisting chords, and option 3 is changing the length duration of the chords
-    #         opt = 1 if random.random() < 1/2 else 2 # if random.random() < 0.5 else 3
-    #         print("opt is ", opt)
+    def generate_chords(self, type=None):
+        '''
+        Fills in self.ms with chords and rhythms for each measure structure
+        '''
+        
+        # 1. For each measure structure in self.ms, generate a rhythm.
+        num_chords = 0 
+        for s in self.ms.keys():
+            rhythm = Structure.generate_rhythm("4/4", level=self.rhythm_level)
+            self.ms[s] = {'ch_rhythm': rhythm, 'chords':None}
+            num_chords += len(rhythm)
 
-    #         # opt 3 is harder to handle, welp
-    #         prev_ch = []    # Strings
-    #         for c in "ABCDEFGHIJKL"[:len(self.ms_chords)]:
-    #             print("Checking ", self.ms_chords[c])
-    #             print("Prev_ch as of now: ", prev_ch)
-
-    #             if [ch.name for ch in self.ms_chords[c]] not in prev_ch:
-    #                 prev_ch.append([ch.name for ch in self.ms_chords[c]])
-    #                 print(self.ms_chords[c], " added to prev_ch")
-                    
-    #             elif opt == 1:
-    #                 print(self.ms_chords[c], " was already found in prev_ch, applying option 1")
-    #                 for ch in self.ms_chords[c]:
-    #                     ch.randomize()
-    #                 print("Chords have now become: ", self.ms_chords[c])
-    #             elif opt == 2:
-    #                 print(self.ms_chords[c], "  was already found in prev_ch, applying option 2")
-    #                 self.ms_chords[c] = [extra_chords[i] for i in range(counter, counter+len(self.ms_chords[c]))]
-    #                 # extra_chords = extra_chords[range(len(self.ms_chords[c])):]
-    #                 counter += len(self.ms_chords[c])
-    #             print()
-    #     print()
-    #     print()
-    #     return counter
-
-    # def update(self):
-    #     for c in self.ms:
-    #         self.all_chords.extend(self.ms_chords[c])
+        # 2. For each measure structure in self.ms, generate the chords
+        chords = generate.tr_gen("saved-models/model-rand-ug.pth", context=generate.context1, 
+                                 num_tokens=num_chords)[len(generate.context1):]
+        start = 0
+        for m in self.order:
+            if self.ms[m]['chords'] is None:
+                # fill in the chords for that measure structure 
+                end = len(self.ms[m]['rhythm'])
+                self.ms[m]['chords'] = [Chord(c) for c in chords[start:start+end]]
+                start += end
 
 
-
-params = {"song_complexity":5, "chord_complexity":3, "variety":4, "song_length":3, "accidentals":3}
-a = Structure('intro', params)
-print(a.generate_rhythm("4/4"))
+    def generate_melody(self):
+        for m in self.ms.keys():
+            self.ms[m]['mel_rhythm'] = [1, 1, 1, 1]   # to start off with
+            rhythm = []
+            for ch in self.ms[m]['chords']:
+                pass
