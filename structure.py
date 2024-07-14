@@ -1,5 +1,6 @@
 import random
 from chord import *
+from note import *
 import generate
 
 # TODO: Clean up code 
@@ -228,7 +229,7 @@ class Structure:
         for m in self.order:
             if self.ms[m]['chords'] is None:
                 # fill in the chords for that measure structure 
-                end = len(self.ms[m]['rhythm'])
+                end = len(self.ms[m]['ch_rhythm'])
                 self.ms[m]['chords'] = [Chord(c) for c in chords[start:start+end]]
                 start += end
 
@@ -236,6 +237,15 @@ class Structure:
     def generate_melody(self):
         for m in self.ms.keys():
             self.ms[m]['mel_rhythm'] = [1, 1, 1, 1]   # to start off with
-            rhythm = []
+            melody = []
             for ch in self.ms[m]['chords']:
-                pass
+                r_n = random.choice(ch.notes)
+                r_n = Note(r_n.name, r_n.octave)
+                r_n.change_octave(by_how_much=2, up_or_down='up')
+                melody.append(r_n)
+            melody = melody[:len(self.ms[m]['mel_rhythm'])]
+            if len(melody) < len(self.ms[m]['mel_rhythm']):
+                melody.extend(['r' for _ in range(len(self.ms[m]['mel_rhythm'])-len(melody))])
+
+            self.ms[m]['melody'] = melody
+

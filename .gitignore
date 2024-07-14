@@ -9,4 +9,4 @@ Data/ug-data/ugdata.py
 *.txt
 *.pth
 *.pt
-*.mid
+*.midi

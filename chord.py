@@ -1,6 +1,6 @@
 import random
 from note import Note
-from pychord import * 
+import pychord
 
 class Chord:
     '''
@@ -17,10 +17,10 @@ class Chord:
         # WARNING: assert does not check if the root and type of the chords are valid
         assert ":" in name and name.index(":") > 0 
 
-        self.name = name 
-        self.notes = [Note(ch) for ch in Chord(self.name.replace(":", "")).components()]
         self._root = name.split(":")[0]
         self._type = name.split(":")[1] if Chord.is_proper(name.split(":")[1]) else 'maj'
+        self.update()
+        
 
     @staticmethod
     def is_proper(type):
@@ -61,7 +61,7 @@ class Chord:
             else:
                 self._root = order[destination] + self._root[1]
 
-        self.name = self._root + ":" + self._type
+        self.update()
         
     def change_maj_min(self):
         if self._type == "maj" or self._type == "maj7":
@@ -76,7 +76,7 @@ class Chord:
             self._type = "sus2"
         elif self._type == "sus2":
             self._type = "sus4"
-        self.name = self._root + ":" + self._type
+        self.update()
 
     def add_rem7(self):
         if self._type == "min" or self._type == "maj":
@@ -85,15 +85,15 @@ class Chord:
             self._type = "min"
         elif self._type == "maj7":
             self._type = "maj"
-        self.name = self._root + ":" + self._type
+        self.update()
 
     def add_rem_sus(self):
         self._type = '' if 'sus' in self._type else 'sus4' if random.random() > 0.5 else 'sus2'
-        self.name = self._root + ":" + self._type
+        self.update()
 
     def simplify_end(self):
         self._type = "min" if "min" in self._type else "maj"
-        self.name = self._root + ":" + self._type
+        self.update()
 
     def randomize(self):
         outcome = random.random()
@@ -104,6 +104,13 @@ class Chord:
         elif outcome < 0.8:
             self.transpose("G") if random.random() < 0.5 else self.transpose("F")
         self.name = self._root + ":" + self._type
+
+    def update(self):
+        self.name = self._root + ":" + self._type
+        self.notes = pychord.Chord(self.name.replace(":", "").replace("min", "m")). \
+                                    components_with_pitch(root_pitch=3)
+        self.notes = [Note(ch[:-1], ch[-1]) for ch in self.notes]
+
 
     def get_type(self):
         return self._type

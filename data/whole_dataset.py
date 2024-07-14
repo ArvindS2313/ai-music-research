@@ -91,7 +91,7 @@ class WholeDataset(Dataset):
     def enumerate(self):
         self.ug_chords = clean_ug(self.rand)
         self.pop909_chords = clean_pop909(self.rand)
-        self.chords = self.ug_chords + self.pop909_chords
+        self.chords = self.ug_chords # + self.pop909_chords
  
         # form set and assign numbers
         all = set()

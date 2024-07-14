@@ -77,6 +77,7 @@ print("If you wish to train either the Tranformer AND/OR the MLP, you can do so.
 print("All outputted MIDI files will appear in the music folder.")
 agent = assign_agent(params)
 agent.generate_chords()
+agent.generate_melody()
 
 # OUTPUT DATA FOR EMAIL
 for s in agent.structs.keys():
@@ -89,13 +90,17 @@ for s in agent.structs.keys():
 
 
 all_chords = []
+all_melodies = []
 for s in agent.structs_str:
     struct = agent.structs[s]
     # loop through all measures in the given struct
     for m in struct.order:
         m_struct = struct.ms[m]
         for i in range(len(m_struct['chords'])):
-            all_chords.append({'chords':m_struct['chords'][i], 'rhythms':m_struct['rhythm'][i]})
+            all_chords.append({'chord':m_struct['chords'][i], 'rhythm':m_struct['ch_rhythm'][i]})
+        for i in range(len(m_struct['melody'])):
+            all_melodies.append({'note':m_struct['melody'][i], 'rhythm':m_struct['mel_rhythm'][i]})
+
 
 tempo = random.randint(params['min_tempo'], params['max_tempo'])
-output.output(all_chords, tempo)
+output.output(all_chords, all_melodies, tempo)

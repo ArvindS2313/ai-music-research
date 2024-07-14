@@ -10,12 +10,12 @@ class Note:
 
     def __init__(self, name, octave):
         ''' Precondition: name is in format 'root':'type' '''
-
+ 
         # WARNING: assert does not check if the root and type of the chords are valid
-        assert name in Note.NOTES and isinstance(octave, int)
+        assert name in Note.NOTES.keys() 
 
         self.name = name 
-        self.octave = octave
+        self.octave = int(octave)
     
     def transpose(self, key):
         '''
@@ -31,7 +31,7 @@ class Note:
         if up_or_down == 'down' and self.octave - by_how_much > 0:
             self.octave -= by_how_much
         if up_or_down == 'up' and self.octave + by_how_much < 8:
-            self.octave += by_how_much
+            self.octave += by_how_much            
 
     def __repr__(self):
         return f"{self.name}{self.octave}"
