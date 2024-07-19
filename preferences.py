@@ -29,6 +29,10 @@ parser.add_argument("-mc", "--measure-complexity", type=int,
                     help="A numerical rating, on a scale from 1 to 3, of the complexity of the "
                     "measure structure parts; higher ratings mean more distinct measures in a "
                     "song structure")  
+parser.add_argument("-ss", "--step-size", type=int, 
+                    help="A numerical rating, on a scale from 1 to 3, of the general step size "
+                    "between two melody notes. Even with a step size of 3, most of the notes, "
+                    "in order to ensure listenability, will have a step size of 1.")
 # parser.add_argument("-s", "--sound", type=int, 
 #                     help="A numerical rating, on a scale from 1 to 5, on whether the chords should "
 #                     "be very consonant (sounds pleasant, 'nice' intervals) or very dissonant "
@@ -80,11 +84,15 @@ agent.generate_chords()
 agent.generate_melody()
 
 # OUTPUT DATA FOR EMAIL
+print(agent.structs_str)
+print("\n\n")
 for s in agent.structs.keys():
     print(f"STRUCT: {s}")
     struct = agent.structs[s]
     print(f"ORDER for {s}:   {struct.order}")
     pprint(struct.ms)
+    print()
+    pprint(struct.melody)
     print()
     print()
 
@@ -97,9 +105,13 @@ for s in agent.structs_str:
     for m in struct.order:
         m_struct = struct.ms[m]
         for i in range(len(m_struct['chords'])):
-            all_chords.append({'chord':m_struct['chords'][i], 'rhythm':m_struct['ch_rhythm'][i]})
-        for i in range(len(m_struct['melody'])):
-            all_melodies.append({'note':m_struct['melody'][i], 'rhythm':m_struct['mel_rhythm'][i]})
+            all_chords.append({'chord':m_struct['chords'][i], 'rhythm':m_struct['rhythm'][i],
+                              'fade': str(struct)=='O'})
+
+    for m in struct.melody:
+        for i in range(len(m['notes'])):
+            all_melodies.append({'note':m['notes'][i], 'rhythm':m['rhythm'][i], 
+                                 'solo': m['solo'], 'fade': str(struct)=='O'})
 
 
 tempo = random.randint(params['min_tempo'], params['max_tempo'])
