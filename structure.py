@@ -57,17 +57,20 @@ class Structure:
             else:
                 self.len = 12
 
+        if self.name == "S":
+            self.len *= 2
+
         # decide on number of unique measures (measure_complexity)
         if self.params["measure_complexity"] == 1:
-            self.unique_measures = {'full':1, 'slight':0}
+            self.unique_measures = 1
         elif self.params["measure_complexity"] == 2:
-            self.unique_measures = {'full':2, 'slight':0}
+            self.unique_measures = 2
         elif self.params["measure_complexity"] == 3:
-            self.unique_measures = {'full':2, 'slight':1}
+            self.unique_measures = 3
         elif self.params["measure_complexity"] == 4:
-            self.unique_measures = {'full':3, 'slight':0}
+            self.unique_measures = 3
         elif self.params["measure_complexity"] == 5:
-            self.unique_measures = {'full':3, 'slight':1}
+            self.unique_measures = 4
 
 
     def gen_components(self):
@@ -76,19 +79,8 @@ class Structure:
         Later, the value will be a dictionary containing the chords and rhythm
         '''
 
-        alph = "ABCD"[:self.unique_measures['full']+self.unique_measures['slight']]
-        self.order = list((100*alph)[:self.len])
-
-        if self.unique_measures['slight']:
-            to_rep = alph[-1]
-            rep_with = random.choice(alph[:-1]) + "'"
-            self.order = [a if a != to_rep else rep_with for a in self.order]
-            
-            # must ensure that a "prime" doesn't come before the unmodified
-            for s in range(1, len(self.order)):
-                if "'" in self.order[s]:
-                    assert self.order[s][-1] in self.order[:s]
-
+        alph = "ABCD"[:len(self.unique_measures)]
+        self.order = list((100*alph)[:self.len])            
         self.ms = {s:None for s in self.order}
 
 
@@ -323,23 +315,24 @@ class Structure:
             return
 
         # Generate a melody for each measure
-        for m in range(self.len):           
-
+        for m in range(self.len):        
             # 1/5th chance that this measure will be the same as laclest measure
-            if m > 0 and random.random() < 1/6:
+            if m > 0 and random.random() < 1/6 and self.name != "S":
                 self.melody.append(self.melody[m-1])
             else:
+                include_16ths = False if self.name == "V" or self.name == "C" else True
+                is_solo = True if self.name == "S" else False
+
                 # Decide on a rhythm 
                 if self.params['rhythm_complexity'] == 1: 
-                    rhythm_level = random.choice([1, 2])
+                    rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0, 0, 0], k=1)[0]
                 elif self.params['rhythm_complexity'] == 2:
-                    rhythm_level = random.choices([1, 2, 3, 4], [0.2, 0.3, 0.3, 0.2], k=1)[0]
+                    rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0.3, 0.2, 0], k=1)[0]
                 else:
                     rhythm_level = random.choices([1, 2, 3, 4, 5], 
                                                     [0.15, 0.15, 0.2, 0.25, 0.25], k=1)[0]
-                    
-                include_16ths = False if self.name == "V" or self.name == "C" else True
-                is_solo = True if self.name == "S" else False
+
+
                 rhythm = Structure.generate_melody_rhythm('4/4', rhythm_level, 
                                                           include_16ths=include_16ths,
                                                           is_solo=is_solo)                                                                                                         
@@ -405,7 +398,7 @@ class Structure:
 
 
                 # 1/5 chance that the rhythm & notes is repeated in half 
-                if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm:
+                if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm and self.name != "S":
                     for i in range(len(rhythm)):
                         if sum(rhythm[:i+1]) == 2:
                             rhythm = rhythm[:i+1] * 2
@@ -415,8 +408,7 @@ class Structure:
                 # Append the rhythm and notes for the measure into self.melody
                 self.melody.append({'rhythm':rhythm, 'notes':melody, 'solo': self.name=="S"})
 
-
-
+                
 # params = {
 #     'song_complexity': 3,
 #     'measure_complexity': 4,
