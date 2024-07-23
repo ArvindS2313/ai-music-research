@@ -53,7 +53,7 @@ class ShortComplex(Agent):
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "O"],
             ["I", "V", "C", "B", "C", "O"],
-            ["I", "V", "C", "V", "S", "O"],
+            ["I", "V", "C", "V", "S", "O", "OS"],
             ["I", "V", "C", "B", "V", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
@@ -65,7 +65,6 @@ class MediumSimplistic(Agent):
         super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "V", "C", "O"],
-            ["I", "V", "C", "V", "B", "V", "V", "C", "O"],
             ["I", "V", "C", "V", "B", "V", "C", "O"],
         ]
         self.structs_str = random.choice(self.poss_structs)
@@ -76,10 +75,10 @@ class MediumComplex(Agent):
     def __init__(self, params) -> None:
         super().__init__(params)
         self.poss_structs = [
-            ["I", "V", "C", "B", "V", "C", "S", "C", "O"],
-            ["I", "V", "C", "IL", "V", "C", "S", "C", "O"],
-            ["I", "V", "C", "IL", "V", "S", "C", "O"],
-            ["I", "V", "C", "B", "V", "S", "C", "V", "C", "O"],
+            ["I", "V", "C", "B", "V", "C", "S", "C", "OS"],
+            ["I", "V", "C", "IL", "V", "C", "S", "C", "OS"],
+            ["I", "V", "C", "IL", "V", "S", "C", "OS"],
+            ["I", "V", "C", "B", "V", "S", "C", "V", "C", "OS"],
         ]
         self.structs_str = random.choice(self.poss_structs)
 
@@ -90,8 +89,8 @@ class LongSimplistic(Agent):
         super().__init__(params)
         self.poss_structs = [
             ["I", "V", "C", "V", "C", "B", "V", "C", "V", "C", "O"],
-            ["I", "V", "C", "B", "V", "C", "V", "S", "V", "C", "O"],
-            ["I", "V", "V", "C", "V", "B", "V", "C", "S", "C", "O"]
+            ["I", "V", "C", "B", "V", "C", "V", "S", "V", "C", "OS"],
+            ["I", "V", "V", "C", "V", "B", "V", "C", "S", "C", "OS"]
         ]
         self.structs_str = random.choice(self.poss_structs)
 
@@ -101,8 +100,8 @@ class LongComplex(Agent):
     def __init__(self, params) -> None:
         super().__init__(params)
         self.structures = [
-            ["I", "V", "C", "V", "B", "S", "V", "C", "IL", "V", "C", "O"],
-            ["I", "V", "C", "S", "V", "S", "C", "B", "V", "S", "C", "O"],
-            ["I", "V", "V", "C", "B", "V", "C", "S", "C", "IL", "C", "O"]
+            ["I", "V", "C", "V", "B", "S", "V", "C", "IL", "V", "C", "OS"],
+            ["I", "V", "C", "S", "V", "S", "C", "B", "V", "S", "C", "OS"],
+            ["I", "V", "V", "C", "B", "V", "C", "S", "C", "IL", "C", "OS"]
         ]
         self.structs_str = random.choice(self.structures)

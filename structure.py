@@ -40,7 +40,7 @@ class Structure:
 
         # decide on number of measures
         # if intro or outro - make shorter
-        if self.name == "I" or self.name == "O":
+        if self.name == "I" or self.name == "O" or self.name == "OS":
             if self.params["song_length"] <= 3:
                 self.len = 2
             else:
@@ -218,16 +218,11 @@ class Structure:
                 rhythm_level = random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2], k=1)[0]
             else:
                 rhythm_level = random.choices([4, 5], weights=[0.8, 0.2])[0]
-                
 
             if self.ms[s] is None:
                 rhythm = Structure.generate_chord_rhythm("4/4", level=rhythm_level)
                 self.ms[s] = {'rhythm': rhythm, 'chords':None}
                 num_chords += len(rhythm)
-
-                if s + "'" in self.ms.keys():
-                    self.ms[s+"'"] = {"rhythm": rhythm, 'chords': None}
-                    num_chords += 1
 
 
         # 2. For each measure structure in self.ms, generate the chords
@@ -240,11 +235,6 @@ class Structure:
                 end = len(self.ms[m]['rhythm'])
                 self.ms[m]['chords'] = [Chord(c) for c in chords[start:start+end]]
                 start += end
-
-                if m + "'" in self.order:
-                    self.ms[m + "'"]['chords'] = [ch for ch in self.ms[m]['chords']]
-                    self.ms[m + "'"]['chords'][-1] = chords[start+start+1]
-                    start += 1
 
 
     @staticmethod
@@ -318,7 +308,7 @@ class Structure:
         for m in range(self.len):        
             # 1/5th chance that this measure will be the same as laclest measure
             include_16ths = False if self.name == "V" or self.name == "C" else True
-            is_solo = True if self.name == "S" else False
+            is_solo = True if self.name == "S" or self.name == "OS" else False
 
             # Decide on a rhythm 
             if self.params['rhythm_complexity'] == 1: 
@@ -381,21 +371,16 @@ class Structure:
                         curr_note, curr_oct = random.randint(0, 3), 4 
                         up_or_down[d+1:] = ['u']*len(up_or_down[d+1:])
 
-                    # note hits octave 7 -- to high!
-                    if curr_oct > 6:
-                        curr_oct = 6
-                        up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
-
-                    # note is G6 or above -- to high!
-                    if curr_oct == 6 and curr_note > 4:
-                        curr_note = random.randint(0, 4)
+                    # note hits octave 6 -- to high!
+                    if curr_oct > 5:
+                        curr_oct = 5
                         up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
 
                     melody.append(Note(all_notes[curr_note], curr_oct))
 
 
-            # 1/5 chance that the rhythm & notes is repeated in half 
-            if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm and self.name != "S":
+            # 1/6 chance that the rhythm & notes is repeated in half 
+            if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm and self.name not in ["S", "OS"]:
                 for i in range(len(rhythm)):
                     if sum(rhythm[:i+1]) == 2:
                         rhythm = rhythm[:i+1] * 2
@@ -403,7 +388,7 @@ class Structure:
                         break 
             
             # Append the rhythm and notes for the measure into self.melody
-            self.melody.append({'rhythm':rhythm, 'notes':melody, 'solo': self.name=="S"})
+            self.melody.append({'rhythm':rhythm, 'notes':melody})
 
                 
 # params = {
