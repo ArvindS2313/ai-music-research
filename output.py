@@ -3,7 +3,8 @@ import pretty_midi
 def output(chords, melodies, tempo):
     midi = pretty_midi.PrettyMIDI(initial_tempo=tempo,)
     piano = pretty_midi.Instrument(program=1)   # for chords
-    flute = pretty_midi.Instrument(program=73) # for melody 
+    mel_num = pretty_midi.instrument_name_to_program("oboe")
+    mel_inst = pretty_midi.Instrument(program=mel_num) # for melody 
     guitar = pretty_midi.Instrument(program=30) # for solo 
     chord_fades = []
     
@@ -38,7 +39,7 @@ def output(chords, melodies, tempo):
             if note['solo']:
                 guitar.notes.append(n)
             else:
-                flute.notes.append(n)
+                mel_inst.notes.append(n)
         time += num_secs    
 
 
@@ -55,9 +56,9 @@ def output(chords, melodies, tempo):
 
         
     midi.instruments.append(piano)
-    midi.instruments.append(flute)
+    midi.instruments.append(mel_inst)
     midi.instruments.append(guitar)
-    midi.write('music/w-fade-out-complex-rhythm-distorted.midi')
+    midi.write('music/med-rhythm-oboe.midi')
 
 
 def beats_to_sec(num, tempo):

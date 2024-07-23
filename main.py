@@ -80,22 +80,11 @@ print("The AI will generate music at least partially in-line with your musical p
 print("If you wish to train either the Tranformer AND/OR the MLP, you can do so.")
 print("All outputted MIDI files will appear in the music folder.")
 agent = assign_agent(params)
+print("An agent has been assigned for your user perferences.")
 agent.generate_chords()
+print("The chords have been generated for the entire song.")
 agent.generate_melody()
-
-# OUTPUT DATA FOR EMAIL
-print(agent.structs_str)
-print("\n\n")
-for s in agent.structs.keys():
-    print(f"STRUCT: {s}")
-    struct = agent.structs[s]
-    print(f"ORDER for {s}:   {struct.order}")
-    pprint(struct.ms)
-    print()
-    pprint(struct.melody)
-    print()
-    print()
-
+print("The melody has been generated for the entire song.")
 
 all_chords = []
 all_melodies = []
@@ -113,6 +102,20 @@ for s in agent.structs_str:
             all_melodies.append({'note':m['notes'][i], 'rhythm':m['rhythm'][i], 
                                  'solo': m['solo'], 'fade': str(struct)=='O'})
 
-
 tempo = random.randint(params['min_tempo'], params['max_tempo'])
 output.output(all_chords, all_melodies, tempo)
+print("The MIDI has been generated and outputted to the music folder.")
+
+
+#### ----------------------------- OUTPUT DATA ------------------------------------ ###
+print(agent.structs_str)
+print("\n\n")
+for s in agent.structs.keys():
+    print(f"STRUCT: {s}")
+    struct = agent.structs[s]
+    print(f"ORDER for {s}:   {struct.order}")
+    pprint(struct.ms)
+    print()
+    pprint(struct.melody)
+    print()
+    print()

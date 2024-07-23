@@ -79,7 +79,7 @@ class Structure:
         Later, the value will be a dictionary containing the chords and rhythm
         '''
 
-        alph = "ABCD"[:len(self.unique_measures)]
+        alph = "ABCD"[:self.unique_measures]
         self.order = list((100*alph)[:self.len])            
         self.ms = {s:None for s in self.order}
 
@@ -317,96 +317,93 @@ class Structure:
         # Generate a melody for each measure
         for m in range(self.len):        
             # 1/5th chance that this measure will be the same as laclest measure
-            if m > 0 and random.random() < 1/6 and self.name != "S":
-                self.melody.append(self.melody[m-1])
+            include_16ths = False if self.name == "V" or self.name == "C" else True
+            is_solo = True if self.name == "S" else False
+
+            # Decide on a rhythm 
+            if self.params['rhythm_complexity'] == 1: 
+                rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0, 0, 0], k=1)[0]
+            elif self.params['rhythm_complexity'] == 2:
+                rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0.3, 0.2, 0], k=1)[0]
             else:
-                include_16ths = False if self.name == "V" or self.name == "C" else True
-                is_solo = True if self.name == "S" else False
+                rhythm_level = random.choices([1, 2, 3, 4, 5], 
+                                                [0.15, 0.15, 0.2, 0.25, 0.25], k=1)[0]
 
-                # Decide on a rhythm 
-                if self.params['rhythm_complexity'] == 1: 
-                    rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0, 0, 0], k=1)[0]
-                elif self.params['rhythm_complexity'] == 2:
-                    rhythm_level = random.choices([1, 2, 3, 4, 5], [0.2, 0.3, 0.3, 0.2, 0], k=1)[0]
+
+            rhythm = Structure.generate_melody_rhythm('4/4', rhythm_level, 
+                                                        include_16ths=include_16ths,
+                                                        is_solo=is_solo)                                                                                                         
+
+            up_or_down = ['d' for _ in range(len(rhythm)//2)]
+            up_or_down += ['u' for _ in range(len(rhythm)-len(up_or_down))]
+            random.shuffle(up_or_down)
+            if m == 0:  
+                # First note of first measure won't have a direction
+                up_or_down[0] = "DNE"
+
+            # Generate weights depending on step size preference
+            choices, weights = list(range(0, 8)), []
+            if self.params['step_size'] == 1:
+                weights = [0.3, 0.5, 0.2, 0, 0, 0, 0, 0]
+            if self.params['step_size'] == 2:
+                weights = [0.13, 0.5, 0.2, 0.10, 0.05, 0, 0, 0]
+            if self.params['step_size'] == 3:
+                weights = [0.1, 0.48, 0.15, 0.13, 0.07, 0.05, 0.02, 0]
+
+            
+            all_notes = list("CDEFGAB")
+            melody = []
+
+            # Generate rest of notes
+            for d in range(len(up_or_down)):
+                dir = up_or_down[d]
+                if dir == 'DNE': 
+                    # First note of first measure
+                    curr_note = random.randint(0, 6)
+                    curr_oct = 5 if curr_note < 3 else 4
+                    melody.append(Note(all_notes[curr_note], curr_oct))
                 else:
-                    rhythm_level = random.choices([1, 2, 3, 4, 5], 
-                                                    [0.15, 0.15, 0.2, 0.25, 0.25], k=1)[0]
+                    size = random.choices(choices, weights, k=1)[0]
+                    curr_note += size if dir == 'u' else -size
+                    
+                    # note goes beyond 'B' of current octave 
+                    if curr_note >= 7:
+                        curr_note %= 7
+                        curr_oct += 1
+                    
+                    # note goes below 'C' of current octave 
+                    if curr_note < 0:
+                        curr_note %= 7
+                        curr_oct -= 1
+
+                    # note hits octave 3 -- to low!
+                    if curr_oct < 4:
+                        curr_note, curr_oct = random.randint(0, 3), 4 
+                        up_or_down[d+1:] = ['u']*len(up_or_down[d+1:])
+
+                    # note hits octave 7 -- to high!
+                    if curr_oct > 6:
+                        curr_oct = 6
+                        up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
+
+                    # note is G6 or above -- to high!
+                    if curr_oct == 6 and curr_note > 4:
+                        curr_note = random.randint(0, 4)
+                        up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
+
+                    melody.append(Note(all_notes[curr_note], curr_oct))
 
 
-                rhythm = Structure.generate_melody_rhythm('4/4', rhythm_level, 
-                                                          include_16ths=include_16ths,
-                                                          is_solo=is_solo)                                                                                                         
-
-                up_or_down = ['d' for _ in range(len(rhythm)//2)]
-                up_or_down += ['u' for _ in range(len(rhythm)-len(up_or_down))]
-                random.shuffle(up_or_down)
-                if m == 0:  
-                    # First note of first measure won't have a direction
-                    up_or_down[0] = "DNE"
-
-                # Generate weights depending on step size preference
-                choices, weights = list(range(0, 8)), []
-                if self.params['step_size'] == 1:
-                    weights = [0.3, 0.5, 0.2, 0, 0, 0, 0, 0]
-                if self.params['step_size'] == 2:
-                    weights = [0.13, 0.5, 0.2, 0.10, 0.05, 0, 0, 0]
-                if self.params['step_size'] == 3:
-                    weights = [0.1, 0.48, 0.15, 0.13, 0.07, 0.05, 0.02, 0]
-
-                
-                all_notes = list("CDEFGAB")
-                melody = []
-
-                # Generate rest of notes
-                for d in range(len(up_or_down)):
-                    dir = up_or_down[d]
-                    if dir == 'DNE': 
-                        # First note of first measure
-                        curr_note = random.randint(0, 6)
-                        curr_oct = 5 if curr_note < 3 else 4
-                        melody.append(Note(all_notes[curr_note], curr_oct))
-                    else:
-                        size = random.choices(choices, weights, k=1)[0]
-                        curr_note += size if dir == 'u' else -size
-                        
-                        # note goes beyond 'B' of current octave 
-                        if curr_note >= 7:
-                            curr_note %= 7
-                            curr_oct += 1
-                        
-                        # note goes below 'C' of current octave 
-                        if curr_note < 0:
-                            curr_note %= 7
-                            curr_oct -= 1
-
-                        # note hits octave 3 -- to low!
-                        if curr_oct < 4:
-                            curr_note, curr_oct = random.randint(0, 3), 4 
-                            up_or_down[d+1:] = ['u']*len(up_or_down[d+1:])
-
-                        # note hits octave 7 -- to high!
-                        if curr_oct > 6:
-                            curr_oct = 6
-                            up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
-
-                        # note is G6 or above -- to high!
-                        if curr_oct == 6 and curr_note > 4:
-                            curr_note = random.randint(0, 4)
-                            up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
-
-                        melody.append(Note(all_notes[curr_note], curr_oct))
-
-
-                # 1/5 chance that the rhythm & notes is repeated in half 
-                if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm and self.name != "S":
-                    for i in range(len(rhythm)):
-                        if sum(rhythm[:i+1]) == 2:
-                            rhythm = rhythm[:i+1] * 2
-                            melody = melody[:i+1] * 2
-                            break 
-                
-                # Append the rhythm and notes for the measure into self.melody
-                self.melody.append({'rhythm':rhythm, 'notes':melody, 'solo': self.name=="S"})
+            # 1/5 chance that the rhythm & notes is repeated in half 
+            if random.random() < 1/6 and 3 not in rhythm and 4 not in rhythm and self.name != "S":
+                for i in range(len(rhythm)):
+                    if sum(rhythm[:i+1]) == 2:
+                        rhythm = rhythm[:i+1] * 2
+                        melody = melody[:i+1] * 2
+                        break 
+            
+            # Append the rhythm and notes for the measure into self.melody
+            self.melody.append({'rhythm':rhythm, 'notes':melody, 'solo': self.name=="S"})
 
                 
 # params = {
