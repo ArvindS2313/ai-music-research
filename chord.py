@@ -15,6 +15,7 @@ class Chord:
 
         self._root = name.split(":")[0]
         self._type = name.split(":")[1] if Chord.is_proper(name.split(":")[1]) else 'maj'
+        self.key = "C"
         self.update()
         
 
@@ -37,7 +38,7 @@ class Chord:
                   "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#":6}
         order = ["B", "E", "A", "D", "G", "C", "F"]
 
-        travel = -(lookup[key] - lookup['C'])
+        travel = -(lookup[key] - lookup[self.key])
         destination = order.index(self._root[0]) + travel
 
         if destination < 0:
@@ -57,6 +58,7 @@ class Chord:
             else:
                 self._root = order[destination] + self._root[1]
 
+        self.key = key
         self.update()
         
     def change_maj_min(self):

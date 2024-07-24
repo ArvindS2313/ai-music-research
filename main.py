@@ -43,16 +43,12 @@ if __name__ == "__main__":
     #                     "chords. An accidental chord is one that is not in the key of the song.")
     # parser.add_argument("-cch", "--common-chords", type=str, 
     #                     help="A list of the most common chords that should appear in the song.")
-    # parser.add_argument("-rh", "--range-high", type=str,
-    #                     help="The highest piano note that should occur (e.g., C7, A5)")
-    # parser.add_argument("-rl", "--range-low", type=str,
-    #                     help="The lowest piano note that should occur (e.g., C3, A2)")
     # parser.add_argument("-mod", "--modulation", type=str, 
     #                     help="The list of keys that the song should modulate (change keys) to");
-    # parser.add_argument("-k", "--key", type=str,
-    #                     help="The key, or the chord center of the song. Keys must be part of the 12"
-    #                     "well-known ones (excluding Gb major, Cb major, and C# major). Major or minor "
-    #                     "keys are supported, though theoretical (double sharp/flat) keys are not.")
+    parser.add_argument("-k", "--key", type=str,
+                        help="The key, or the chord center of the song. Keys must be part of the 12"
+                        "well-known ones (excluding Gb major, Cb major, and C# major). Major keys"
+                        "are supported, though minor or theoretical (double sharp/flat) keys are not.")
     parser.add_argument("-min", "--min-tempo", type=int)
     parser.add_argument("-max", "--max-tempo", type=int)
     args = parser.parse_args()
@@ -91,7 +87,8 @@ if __name__ == "__main__":
     print("The chords have been generated for the entire song.")
     agent.generate_melody()
     print("The melody has been generated for the entire song.")
-
+    agent.transpose()
+    print("The song has been transposed to the desired key.")
 
 
 #### ----------------------------- OUTPUT MIDI & PRINT DATA ----------------------------- ###
@@ -159,7 +156,7 @@ def output(file_name, agent, tempo):
                 n = pretty_midi.Note(velocity=125, pitch=num, start=mel_time, 
                                         end=mel_time+num_secs)
                 
-                if str(struct) == "S" or str(struct) == "O":
+                if str(struct) == "S" or str(struct) == "OS":
                     guitar.notes.append(n)
                 else:
                     mel_inst.notes.append(n)
@@ -207,6 +204,6 @@ def beats_to_sec(num, tempo):
 if __name__ == "__main__":
     tempo = random.randint(params['min_tempo'], params['max_tempo'])
     # printout()
-    output("testing-outro-solo-no2.midi", agent, tempo)
+    output("melody-key-D", agent, tempo)
     print("The MIDI has been generated and outputted to the music folder.")
 

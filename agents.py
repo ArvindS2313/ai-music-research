@@ -33,6 +33,11 @@ class Agent:
         for s in self.structs.keys():
             self.structs[s].generate_melody()
 
+    def transpose(self):
+        to_key = self.params['key']
+        for s in self.structs.keys():
+            self.structs[s].transpose(to_key)
+
 
 
 class ShortSimple(Agent):

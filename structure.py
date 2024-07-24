@@ -25,8 +25,6 @@ class Structure:
         self.gen_components()
 
         self.melody = []    # list of dictionaries detailing melody notes & rhythm
-        
-                        
 
     def __repr__(self):
         return self.name
@@ -390,6 +388,28 @@ class Structure:
             # Append the rhythm and notes for the measure into self.melody
             self.melody.append({'rhythm':rhythm, 'notes':melody})
 
+    def generate_bass(self):
+        '''
+        Generates a walking bass line; very simple.
+        '''
+
+    def transpose(self, to_key):
+        '''
+        Transposes all the notes & chords to the desired key
+        '''
+
+        # Transpose the chords in self.ms 
+        for m in self.ms.keys():
+            for ch in self.ms[m]['chords']:
+                ch.transpose(key=to_key)
+
+        # Transpose the melody/solo notes
+        for m in self.melody:
+            for n in m['notes']:
+                if n != "r":
+                    n.transpose(key=to_key)
+
+
                 
 # params = {
 #     'song_complexity': 3,
@@ -401,6 +421,8 @@ class Structure:
 # }
 
 
-# a = Structure('S', params=params)
+# a = Structure('O', params=params)
+# a.generate_chords()
 # a.generate_melody()
+# a.transpose(to_key="Eb")
 # pprint(a.melody)
