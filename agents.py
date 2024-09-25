@@ -32,12 +32,18 @@ class Agent:
         # for now, the melody will simply be quarter notes
         for s in self.structs.keys():
             self.structs[s].generate_melody()
+            self.structs[s].smoother()
 
     def transpose(self):
         to_key = self.params['key']
         for s in self.structs.keys():
             self.structs[s].transpose(to_key)
 
+    def generate_bass(self):
+        assert self.structs != {}, "Melody generation must come after chord generation"
+        for s in self.structs.keys():
+            self.structs[s].generate_bass()
+            
 
 
 class ShortSimple(Agent):

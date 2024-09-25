@@ -15,51 +15,59 @@ class Chord:
 
         self._root = name.split(":")[0]
         self._type = name.split(":")[1] if Chord.is_proper(name.split(":")[1]) else 'maj'
+        if "min" in self._type:
+            print(name)
+        self._type = self._type.replace("min", "m")
+
         self.key = "C"
-        self.update()
-        
+        self._update()      
 
     @staticmethod
     def is_proper(type):
         return type in {"maj", "min", "dim", "aug", "sus4", "sus2", "maj7", 
                         "7", "min7", "min7b5", "dim7", "add9"}
     
-    def transpose(self, key):
-        '''
-        Algorithm:
-        1) Determine distance from C major to desired key
-        2) Travel that distance to determine the chord in the opposite direction in the order list
-        3) If we travel too far left, then index into the list and sharp the result
-        4) If we travel too far right, normalize the result (mod 7), index into list, and flat the result
-        5) Endings do not change. 
-        '''
+    # def transpose(self, key):
+    #     '''
+    #     Algorithm:
+    #     1) Determine distance from C major to desired key
+    #     2) Travel that distance to determine the chord in the opposite direction in the order list
+    #     3) If we travel too far left, then index into the list and sharp the result
+    #     4) If we travel too far right, normalize the result (mod 7), index into list, and flat the result
+    #     5) Endings do not change. 
+    #     '''
 
-        lookup = {"Db": -5, "Ab": -4, "Eb": -3, "Bb": -2, "F": -1, "C": 0, 
-                  "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#":6}
-        order = ["B", "E", "A", "D", "G", "C", "F"]
+    #     lookup = {"Db": -5, "Ab": -4, "Eb": -3, "Bb": -2, "F": -1, "C": 0, 
+    #               "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#":6}
+    #     order = ["B", "E", "A", "D", "G", "C", "F"]
 
-        travel = -(lookup[key] - lookup[self.key])
-        destination = order.index(self._root[0]) + travel
+    #     travel = -(lookup[key] - lookup[self.key])
+    #     destination = order.index(self._root[0]) + travel
 
-        if destination < 0:
-            if len(self._root) == 1:
-                self._root = order[destination] + "#"
-            if self._root[1] == "b":
-                self._root = order[destination]
-        elif destination >= len(order):
-            destination %= 7
-            if len(self._root) == 1:
-                self._root = order[destination] + "b"
-            if self._root[1] == "#":
-                self._root = order[destination]
-        else:
-            if len(self._root) == 1:
-                self._root = order[destination]
-            else:
-                self._root = order[destination] + self._root[1]
+    #     if destination < 0:
+    #         if len(self._root) == 1:
+    #             self._root = order[destination] + "#"
+    #         if self._root[1] == "b":
+    #             self._root = order[destination]
+    #     elif destination >= len(order):
+    #         destination %= 7
+    #         if len(self._root) == 1:
+    #             self._root = order[destination] + "b"
+    #         if self._root[1] == "#":
+    #             self._root = order[destination]
+    #     else:
+    #         if len(self._root) == 1:
+    #             self._root = order[destination]
+    #         else:
+    #             self._root = order[destination] + self._root[1]
 
-        self.key = key
-        self.update()
+    #     self.key = key
+    #     self._update()
+
+    def transpose(self, steps=7):
+        self.chord.transpose(steps)
+        self._root = self.chord.root
+        self._update()
         
     def change_maj_min(self):
         if self._type == "maj" or self._type == "maj7":
@@ -74,7 +82,7 @@ class Chord:
             self._type = "sus2"
         elif self._type == "sus2":
             self._type = "sus4"
-        self.update()
+        self._update()
 
     def add_rem7(self):
         if self._type == "min" or self._type == "maj":
@@ -83,15 +91,15 @@ class Chord:
             self._type = "min"
         elif self._type == "maj7":
             self._type = "maj"
-        self.update()
+        self._update()
 
     def add_rem_sus(self):
         self._type = '' if 'sus' in self._type else 'sus4' if random.random() > 0.5 else 'sus2'
-        self.update()
+        self._update()
 
     def simplify_end(self):
         self._type = "min" if "min" in self._type else "maj"
-        self.update()
+        self._update()
 
     def randomize(self):
         outcome = random.random()
@@ -100,16 +108,16 @@ class Chord:
         elif outcome < 0.60:
             self.add_rem7()
         elif outcome < 0.8:
-            self.transpose("G") if random.random() < 0.5 else self.transpose("F")
-        self.name = self._root + ":" + self._type
+            self.transpose(7) if random.random() < 0.5 else self.transpose(-7)
 
-    def update(self):
-        self.name = self._root + ":" + self._type
-        self.notes = pychord.Chord(self.name.replace(":", "").replace("min", "m")). \
-                                    components_with_pitch(root_pitch=3)
-        self.notes = [Note(ch[:-1], ch[-1]) for ch in self.notes]
-
-
+    def _update(self):
+        self.name = self._root + self._type
+        self.chord = pychord.Chord(self.name)
+        self.simp_chord = self._root + ("min" if "min" in self.name 
+                                        else "dim" if "dim" in self.name else "maj")
+        self.notes = [Note(ch[:-1], ch[-1]) for ch in self.chord.
+                      components_with_pitch(root_pitch=3)]
+        
     def get_type(self):
         return self._type
     

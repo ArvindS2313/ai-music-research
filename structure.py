@@ -25,6 +25,7 @@ class Structure:
         self.gen_components()
 
         self.melody = []    # list of dictionaries detailing melody notes & rhythm
+        self.bass = []      # list of dictionaries detailing bass line notes 
 
     def __repr__(self):
         return self.name
@@ -164,8 +165,11 @@ class Structure:
 
     def clean_chords(self):
         '''
-        Adjusts endings of the chords depending on the chord_complexity rating
+        1. Adjusts endings of chords based on chord_complexity rating
+        2. Keeps required percentage of chords in the key 
         '''
+
+        # Adjust chord endings 
         if self.params['chord_complexity'] <= 2:
             # fully major minor 
             percent_maj_min = 1
@@ -200,6 +204,20 @@ class Structure:
                     maj_min.remove(remove)
                     non_maj_min.append(remove)
 
+        # Adjust accidentals 
+        if self.params['accidentals'] == 1:
+            percent = 1 
+        elif self.params['accidentals'] == 2:
+            percent = 0.9; lim = 2
+        else:
+            percent = 0.8; lim = 3
+
+        in_c = ["Cmaj", "Dm", "Em", "Fmaj", "Gmaj", "Am", "Bdim"]
+        for m in self.ms.keys():
+            chs = [ch for ch in self.ms[m]['chords']]
+            print(f"{m} Chords: \t {chs}")
+            print([c.simp_chord for c in chs])
+            
 
     def generate_chords(self, type=None):
         '''
@@ -299,7 +317,7 @@ class Structure:
 
         # Don't generate a melody for intros and conclusion
         if self.name == "I" or self.name == "O":
-            self.melody = [{'rhythm': [1, 1, 1, 1], 'notes': ['r', 'r', 'r', 'r'], 'solo':False}]*self.len
+            self.melody = [{'rhythm': [1, 1, 1, 1], 'notes': ['r', 'r', 'r', 'r']}]*self.len
             return
 
         # Generate a melody for each measure
@@ -371,7 +389,7 @@ class Structure:
 
                     # note hits octave 6 -- to high!
                     if curr_oct > 5:
-                        curr_oct = 5
+                        curr_note, curr_oct = random.randint(5, 6), 5
                         up_or_down[d+1:] = ['d']*len(up_or_down[d+1:])
 
                     melody.append(Note(all_notes[curr_note], curr_oct))
@@ -388,10 +406,116 @@ class Structure:
             # Append the rhythm and notes for the measure into self.melody
             self.melody.append({'rhythm':rhythm, 'notes':melody})
 
+
+    @staticmethod
+    def semitone_dist(n1:Note, n2:Note):
+        '''
+        Calculates the distance in semitones between the notes
+        '''
+        dist = abs(Note.NOTES[n1.name] - Note.NOTES[n2.name])
+        dist = min(dist, 12-dist)
+        return dist 
+    
+
+    @staticmethod
+    def intersect_ranges(r1, r2):
+        start = max(r1[0], r2[0])
+        end = min(r1[1], r2[1])
+        if start < end:
+            return (start, end)
+
+
+    def smoother(self):
+        '''
+        Makes the melody and chords cohere by removing clashes
+        '''
+        # If it is an intro or outro, there is no melody, so return
+        if self.name == "I" or self.name == "O":
+            return
+
+        for m in range(len(self.melody)):
+            msre_struct = self.order[m]
+            mel_r, mel_n = self.melody[m]['rhythm'], self.melody[m]['notes']
+
+            mel_time = 0 
+            # Loop through each of the notes in the melody measure
+            for n in range(len(mel_n)):
+                mel_range = (mel_time, mel_time+mel_r[n])   # time range in beats of the melody note
+    
+                ch_in_range = []
+                ch_time = 0 
+                # Find all the chords which are in the same range as the note
+                for c in range(len(self.ms[msre_struct]['rhythm'])):
+                    ch_range = (ch_time, ch_time+self.ms[msre_struct]['rhythm'][c])
+                    does_int = Structure.intersect_ranges(mel_range, ch_range)
+
+                    if does_int is not None:
+                        # Chord's range intersects with the melody note range
+                        ch = self.ms[msre_struct]['chords'][c]
+                        ch_in_range.append(ch)
+                    ch_time += self.ms[msre_struct]['rhythm'][c]
+
+                if len(ch_in_range) == 1:
+                    ch = ch_in_range[0]
+
+                    # Assign a rank & change melody note if needed
+                    if 0 in [Structure.semitone_dist(mel_n[n], note) for note in ch.notes]:
+                        rank = 1 
+
+                    elif Structure.semitone_dist(mel_n[n], ch.notes[0]) == 1:
+                        rank = 4 
+                        # Change the note to the root
+                        mel_n[n] = Note(ch.notes[0].name, mel_n[n].octave)
+                        if mel_n[n].name == "C":
+                            mel_n[n].change_octave(1, 'up')
+                        if mel_n[n].name == "B":
+                            mel_n[n].change_octave(1, 'down')
+
+                    elif 1 in [Structure.semitone_dist(mel_n[n], note) for note in ch.notes]:
+                        rank = 3
+                        # 75% chance of changing to a better note 
+                        if random.random() < 0.75:
+                            l = [Structure.semitone_dist(mel_n[n], note) for note in ch.notes]
+                            pos = l.index(1)
+                            mel_n[n] = Note(ch.notes[pos].name, mel_n[n].octave)
+                            if mel_n[n].name == "C":
+                                mel_n[n].change_octave(1, 'up')
+                            if mel_n[n].name == "B":
+                                mel_n[n].change_octave(1, 'down')
+
+                    elif 2 in [Structure.semitone_dist(mel_n[n], note) for note in ch.notes]:
+                        rank = 2
+                    else:
+                        rank = None
+
+                mel_time += mel_r[n]
+
+
     def generate_bass(self):
         '''
         Generates a walking bass line; very simple.
         '''
+
+        # No bass line in intro, outro, or outro solos
+        if self.name == "I" or "O" in self.name:
+            self.bass = [{'rhythm': [1, 1, 1, 1], 'notes': ['r', 'r', 'r', 'r']}]*self.len
+            return
+        
+        # Bass line notes are the notes from the first four chords; if less than 4
+        # chords, the remaining notes are rests.
+        for s in self.order:
+            rhythm = []
+            # Possibility that rhythm might become slightly more complex
+            for _ in range(4):
+                rhythm.extend([1] if random.random() < 0.8 else [1/2, 1/2])
+
+            bass = []
+            for ch in self.ms[s]['chords'][:len(rhythm)]:
+                bass.append(Note(random.choice(ch.notes).name, 2))
+            bass.extend(['r' for _ in range(len(rhythm)-len(bass))])
+
+            self.bass.append({'rhythm': rhythm, 'notes':bass})
+
 
     def transpose(self, to_key):
         '''
@@ -410,19 +534,17 @@ class Structure:
                     n.transpose(key=to_key)
 
 
-                
-# params = {
-#     'song_complexity': 3,
-#     'measure_complexity': 4,
-#     'rhythm_complexity': 3,
-#     'chord_complexity': 3,
-#     'song_length': 3,
-#     'step_size': 3
-# }
+params = {
+    'song_complexity': 3,
+    'measure_complexity': 4,
+    'rhythm_complexity': 3,
+    'chord_complexity': 3,
+    'song_length': 3,
+    'step_size': 3,
+    'accidentals': 2
+}
 
 
-# a = Structure('O', params=params)
-# a.generate_chords()
-# a.generate_melody()
-# a.transpose(to_key="Eb")
-# pprint(a.melody)
+a = Structure('V', params=params)
+a.generate_chords()
+a.clean_chords()

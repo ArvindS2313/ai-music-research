@@ -4,9 +4,12 @@ __pycache__
 .ipynb_checkpoints
 Data/ug-data/Band-NN-Testing.ipynb
 Data/ug-data/ugdata.py
+soundfonts
 *.bin
 *.pkl
 *.txt
 *.pth
 *.pt
 *.midi
+*.mp3
+*.wav

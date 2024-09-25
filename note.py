@@ -15,7 +15,7 @@ class Note:
         assert name in Note.NOTES.keys() 
 
         self.name = name 
-        self.octave = int(octave)
+        self.octave = int(octave)   # if octave is a string
         assert 9 > self.octave > 1, "Outside octave range"
         self.key = "C"
     
@@ -53,7 +53,6 @@ class Note:
                 self.name = order[destination] + self.name[1]
 
         self.key = key
-
 
     def change_octave(self, by_how_much, up_or_down):
         if up_or_down == 'down' and self.octave - by_how_much > 0:
