@@ -1,4 +1,4 @@
-# Research-Project-PI
+# AI Music Research (2022-2025)
 Code for the project "Generating Music Using Neural Networks and Routine Planning Architectures" under the guidance of Prof. Richard Fox.
 
 See here for more info: https://arvinds2313.github.io/research.html
